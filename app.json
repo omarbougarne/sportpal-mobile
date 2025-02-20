@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "sportpal-mobile",
-    "slug": "sportpal-mobile",
+    "slug": "sportpal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -36,6 +36,16 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "apiUrl": "http://192.168.8.81:9000/",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "89c7aa4c-9343-4c70-84dc-76e6cd05baba"
+      }
+    },
+    "owner": "bougarneomar"
   }
 }
