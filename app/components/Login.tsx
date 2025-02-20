@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
-import { login } from '@/services/api/authApi';
+import { login } from '@/app/api/authApi';
 
 export default function Login() {
   const [email, setEmail] = useState('');
