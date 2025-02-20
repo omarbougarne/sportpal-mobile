@@ -1,8 +1,8 @@
 import { signUp } from "@/services/api/authApi";
 import { SignUpData } from "@/types/auth";
 import { useState } from "react";
-import { TextInput } from "react-native-gesture-handler";
-import { View, Text, StyleSheet, Button } from "react-native";
+import { TextInput, Button } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
 export default function SignUp() {
@@ -13,43 +13,44 @@ export default function SignUp() {
   const router = useRouter();
     
   const handleSignUp = async () => {
-    try{
+    try {
       const userData: SignUpData = { name, email, password };
-      const response = await signUp(userData)
+      const response = await signUp(userData);
       console.log('User signed up successfully:', response);
-      router.push('../Login');
-    }catch(error){
+      // Navigate to the login screen after successful signup
+      router.push('/components/Login');
+    } catch (error) {
       setError('Failed to sign up. Please try again.');
     }
-  }
+  };
 
-  <View>
-    <TextInput 
-    style={styles.input}
-    placeholder='Name...'
-    value={name}
-    onChangeText={setName}
-    />
-    <TextInput 
-    style={styles.input}
-    placeholder='Email...'
-    value={email}
-    onChangeText={setEmail}
-    keyboardType="email-address"
-    />
-    <TextInput 
-    style={styles.input}
-    placeholder='Password***'
-    value={name}
-    onChangeText={setPassword}
-    secureTextEntry
-    />
-    {error && <Text style={styles.error}>{error}</Text>}
-    {/*using button for now*/}
-    <Button title="Sign Up" onPress={handleSignUp}/>
-  </View>
+  return (
+    <View style={styles.container}>
+      <TextInput 
+        style={styles.input}
+        placeholder='Name...'
+        value={name}
+        onChangeText={setName}
+      />
+      <TextInput 
+        style={styles.input}
+        placeholder='Email...'
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+      />
+      <TextInput 
+        style={styles.input}
+        placeholder='Password***'
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      {error && <Text style={styles.error}>{error}</Text>}
+      <Button title="Sign Up" onPress={handleSignUp} />
+    </View>
+  );
 }
-
 
 const styles = StyleSheet.create({
   container: {

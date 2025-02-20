@@ -1,10 +1,12 @@
-import { Text, StyleSheet, Platform } from 'react-native';
+import { Text, StyleSheet, View } from 'react-native';
 
 
 
 export default function HomeScreen() {
   return (
-    <Text>hello</Text>
+    <View>
+    <Text style={{color: 'white'}}>hello</Text>
+    </View>
   );
 }
 
