@@ -1,4 +1,4 @@
-import { signUp } from "@/app/api/authApi";
+import { signUp } from "@/app/services/api/authApi";
 import { SignUpData } from "@/app/types/auth";
 import { useState } from "react";
 import { TextInput, Button } from "react-native";
