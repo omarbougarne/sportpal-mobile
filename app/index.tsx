@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Link } from 'expo-router';
-import Login from './components/Login';
+import Login from './Login';
 
 export default function Home() {
   return (
     <View style={styles.container}>
       <Login />
-      <Link href="/components/SignUp" style={styles.link}>
+      <Link href="./SignUp" style={styles.link}>
         Don't have an account? Sign Up
       </Link>
     </View>

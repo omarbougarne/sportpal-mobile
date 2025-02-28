@@ -38,7 +38,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://192.168.8.81:9001/",
+      "apiUrl": "http://192.168.8.81:9000/",
       "router": {
         "origin": false
       },

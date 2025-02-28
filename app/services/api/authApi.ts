@@ -1,24 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from './apiClient';
-import { SignUpData, LoginData } from '@/app/types/auth';
 
-export const signUp = async (userData: SignUpData) => {
+export const login = async (loginData: { email: string; password: string }) => {
     try {
-        const response = await apiClient.post('/auth/signup', userData);
-        const { token } = response.data;
-        await AsyncStorage.setItem('authToken', token);
-        return response.data;
-    } catch (error) {
-        console.error('Error signing up:', error);
-        throw error;
-    }
-};
+        console.log('Sending login request with data:', loginData);
+        const response = await apiClient.post('/auth/login', loginData);
+        console.log('Received login response:', response.data.data.access_token);
 
-export const login = async (userData: LoginData) => {
-    try {
-        const response = await apiClient.post('/auth/login', userData);
-        const { token } = response.data;
-        await AsyncStorage.setItem('authToken', token);
+        const access_token = response.data.data.access_token;
+
+        if (access_token) {
+            console.log('Storing token:', access_token);
+            await AsyncStorage.setItem('authToken', access_token);
+        } else {
+            console.error('No token received');
+            throw new Error('No token received');
+        }
+
         return response.data;
     } catch (error) {
         console.error('Error logging in:', error);

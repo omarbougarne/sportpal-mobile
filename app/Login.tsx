@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { login } from '@/app/services/api/authApi';
+import { useRouter } from 'expo-router';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<String | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleLogin = async () => {
     try {
+      console.log('Attempting to log in with email:', email);
       const loginData = { email, password };
       const response = await login(loginData);
       console.log('User logged in successfully:', response);
+      router.push('/(tabs)');
     } catch (error) {
+      console.error('Failed to log in:', error);
       setError('Failed to log in. Please try again.');
     }
   };

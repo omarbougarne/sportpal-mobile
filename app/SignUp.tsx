@@ -18,7 +18,7 @@ export default function SignUp() {
       const response = await signUp(userData);
       console.log('User signed up successfully:', response);
       // Navigate to the login screen after successful signup
-      router.push('/components/Login');
+      router.push('./Login');
     } catch (error) {
       setError('Failed to sign up. Please try again.');
     }
