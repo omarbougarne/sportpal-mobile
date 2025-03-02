@@ -1,53 +1,52 @@
-import { signUp } from "@/app/services/api/authApi";
-import { SignUpData } from "@/app/types/auth";
-import { useState } from "react";
-import { TextInput, Button } from "react-native";
-import { View, Text, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import React, { useState } from 'react';
+import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
+import { signup } from '@/app/services/api/authApi';
+import { useRouter } from 'expo-router';
 
-export default function SignUp() {
+export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-    
-  const handleSignUp = async () => {
+
+  const handleSignup = async () => {
     try {
-      const userData: SignUpData = { name, email, password };
-      const response = await signUp(userData);
+      console.log('Attempting to sign up with email:', email);
+      const signupData = { name, email, password };
+      const response = await signup(signupData);
       console.log('User signed up successfully:', response);
-      // Navigate to the login screen after successful signup
       router.push('./Login');
     } catch (error) {
+      console.error('Failed to sign up:', error);
       setError('Failed to sign up. Please try again.');
     }
   };
 
   return (
     <View style={styles.container}>
-      <TextInput 
+      <TextInput
         style={styles.input}
-        placeholder='Name...'
+        placeholder="Name"
         value={name}
         onChangeText={setName}
       />
-      <TextInput 
+      <TextInput
         style={styles.input}
-        placeholder='Email...'
+        placeholder="Email"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
       />
-      <TextInput 
+      <TextInput
         style={styles.input}
-        placeholder='Password***'
+        placeholder="Password"
         value={password}
         onChangeText={setPassword}
         secureTextEntry
       />
       {error && <Text style={styles.error}>{error}</Text>}
-      <Button title="Sign Up" onPress={handleSignUp} />
+      <Button title="Sign Up" onPress={handleSignup} />
     </View>
   );
 }
