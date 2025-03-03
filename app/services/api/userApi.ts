@@ -52,10 +52,10 @@ export const deleteUser = async (id: string): Promise<User> => {
     }
 };
 
-// In React Native
+
 export const fetchCurrentUser = async () => {
     try {
-        const response = await apiClient.get('/users/me'); // 👈 No ID needed!
+        const response = await apiClient.get('/users/me');
         return response.data;
     } catch (error) {
         console.error('Error:', error);
