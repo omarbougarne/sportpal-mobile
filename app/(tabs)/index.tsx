@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { fetchGroups } from '@/app/services/api/groupApi';
+import { Group } from '@/app/types/group';
+import { useRouter } from 'expo-router';
 
 export default function Index() {
-
-  interface Group {
-    _id: string;
-    name: string;
-  }
-
   const [groups, setGroups] = useState<Group[]>([]);
+  const router = useRouter();
 
   useEffect(() => {
     const loadGroups = async () => {
@@ -40,10 +37,31 @@ export default function Index() {
         renderItem={({ item }) => (
           <View style={styles.groupItem}>
             <Text style={styles.groupName}>{item.name}</Text>
+            <Text style={styles.groupDetail}>Sport: {item.sport}</Text>
+            <Text style={styles.groupDetail}>Activity: {item.activity}</Text>
+            <Text style={styles.groupDetail}>Location: {item.location}</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => router.push(`/user/updateGroup?id=${item._id}`)}
+            >
+              <Text style={styles.buttonText}>Update Group</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => router.push(`/user/deleteGroup?id=${item._id}`)}
+            >
+              <Text style={styles.buttonText}>Delete Group</Text>
+            </TouchableOpacity>
           </View>
         )}
         ListEmptyComponent={<Text style={styles.emptyMessage}>No groups available</Text>}
       />
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => router.push('/user/createGroup')}
+      >
+        <Text style={styles.buttonText}>Create Group</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -69,9 +87,34 @@ const styles = StyleSheet.create({
   },
   groupName: {
     fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  groupDetail: {
+    fontSize: 16,
+    marginBottom: 2,
   },
   emptyMessage: {
     fontSize: 18,
     color: 'gray',
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  createButton: {
+    backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 16,
   },
 });

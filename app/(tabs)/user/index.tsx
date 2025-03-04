@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Button, TouchableOpacity } from 'react-native';
 import { fetchCurrentUser } from '@/app/services/api/userApi';
+import { router } from 'expo-router';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
@@ -26,9 +27,16 @@ export default function ProfileScreen() {
       {user ? (
         <View>
           <Text style={styles.info}>Name: {user.name}</Text>
-          <Text style={styles.info}>Email: {user.email}</Text>
-          {/* Add more user information here as needed */}
-        </View>
+          <Text style={styles.info}>Level: {user.level}</Text>
+          <Text style={styles.info}>Availability: {user.availability}</Text>
+          <Text style={styles.info}>Status: {user.accountStatus}</Text>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => router.push('/user/settings')}
+          >
+            <Text style={styles.buttonText}>Edit Profile</Text>
+          </TouchableOpacity>        
+          </View>
       ) : (
         <Text style={styles.info}>Loading user information...</Text>
       )}
@@ -51,5 +59,17 @@ const styles = StyleSheet.create({
   info: {
     fontSize: 18,
     marginBottom: 8,
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

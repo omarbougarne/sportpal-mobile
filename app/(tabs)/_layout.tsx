@@ -33,10 +33,18 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="profile"
+          name="user/index"
           options={{
             title: 'Profile',
             tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} />,
+          }}
+        />
+        <Tabs.Screen
+          name="user/settings"
+          options={{
+            title: 'Edit',
+            tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" color={color} size={size} />,
+            tabBarButton: () => null,
           }}
         />
       </Tabs>
