@@ -1,39 +1,54 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { fetchGroups } from '@/app/services/api/groupApi';
-import { Group } from '@/app/types/group';
+import React, { useEffect, useContext } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { UserContext } from '../context/UserContext';
+import { useGroups } from '../context/GroupContext'; // Assuming this exists
 
 export default function Index() {
-  const [groups, setGroups] = useState<Group[]>([]);
   const router = useRouter();
+  const { user, refreshUser } = useContext(UserContext)!;
+  const { groups, loading, error, fetchAllGroups, joinGroupByNameContext } = useGroups();
 
   useEffect(() => {
-    const loadGroups = async () => {
-      try {
-        console.log('Loading groups...');
-        const data = await fetchGroups();
-        console.log('Groups loaded:', data);
-        setGroups(data);
-        console.log('State groups after setting:', data);
-      } catch (error) {
-        console.error('Failed to fetch groups:', error);
-      }
-    };
-
-    loadGroups();
+    fetchAllGroups();
+    // Refresh user data when component mounts
+    refreshUser();
   }, []);
 
-  useEffect(() => {
-    console.log('State groups updated:', groups);
-  }, [groups]);
+  const handleJoinGroup = async (groupName: string) => {
+    if (!user || !user._id) {
+      // User is not logged in
+      Alert.alert(
+        "Authentication Required",
+        "You need to login first to join a group.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Login", onPress: () => router.push("./") }
+        ]
+      );
+      return;
+    }
+
+    try {
+      await joinGroupByNameContext(groupName);
+      Alert.alert("Success", "You have successfully joined the group!");
+      // Refresh user data after joining to update the UI with new group membership
+      refreshUser();
+    } catch (err) {
+      console.error('Error joining group:', err);
+      Alert.alert("Error", "Failed to join group. Please try again later.");
+    }
+  };
+
+  if (loading) return <Text>Loading groups...</Text>;
+  if (error) return <Text>Error: {error}</Text>;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Best Groups for You</Text>
       <FlatList
         data={groups}
-        keyExtractor={(item) => item._id.toString()}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <View style={styles.groupItem}>
             <Text style={styles.groupName}>{item.name}</Text>
@@ -42,79 +57,46 @@ export default function Index() {
             <Text style={styles.groupDetail}>Location: {item.location}</Text>
             <TouchableOpacity
               style={styles.button}
-              onPress={() => router.push(`/user/updateGroup?id=${item._id}`)}
+              onPress={() => router.push(`./group/UpdateGroup?id=${item._id}`)}
             >
               <Text style={styles.buttonText}>Update Group</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.button}
-              onPress={() => router.push(`/user/deleteGroup?id=${item._id}`)}
+              style={[styles.button, { 
+                backgroundColor: user && user._id ? 'green' : '#999' 
+              }]}
+              onPress={() => handleJoinGroup(item.name)}
+              disabled={!user || !user._id}
             >
-              <Text style={styles.buttonText}>Delete Group</Text>
+              <Text style={styles.buttonText}>
+                {user && user._id ? "Join Group" : "Login to Join"}
+              </Text>
             </TouchableOpacity>
           </View>
         )}
         ListEmptyComponent={<Text style={styles.emptyMessage}>No groups available</Text>}
       />
-      <TouchableOpacity
-        style={styles.createButton}
-        onPress={() => router.push('/user/createGroup')}
-      >
-        <Text style={styles.buttonText}>Create Group</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
   groupItem: {
     padding: 10,
     marginVertical: 8,
     backgroundColor: '#f9c2ff',
     borderRadius: 5,
-    width: '100%',
   },
-  groupName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  groupDetail: {
-    fontSize: 16,
-    marginBottom: 2,
-  },
-  emptyMessage: {
-    fontSize: 18,
-    color: 'gray',
-  },
+  groupName: { fontSize: 18, fontWeight: 'bold' },
+  groupDetail: { fontSize: 16 },
   button: {
     backgroundColor: '#007BFF',
     padding: 10,
     borderRadius: 5,
-    alignItems: 'center',
     marginTop: 8,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  createButton: {
-    backgroundColor: '#28a745',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 16,
-  },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  emptyMessage: { fontSize: 18, color: 'gray' },
 });

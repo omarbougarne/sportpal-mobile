@@ -53,11 +53,12 @@ export const deleteUser = async (id: string): Promise<User> => {
 };
 
 
-export const fetchCurrentUser = async () => {
+export const fetchCurrentUser = async (): Promise<User | null> => {
     try {
         const response = await apiClient.get('/users/me');
         return response.data;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching current user:', error);
+        return null; // Return null instead of undefined on error
     }
 };

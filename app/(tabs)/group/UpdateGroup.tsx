@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { getGroupById, updateGroup } from '@/app/services/api/groupApi';
 import { useRouter, useLocalSearchParams } from 'expo-router'; 
+import DeleteGroup from './DeleteGroup';
 
 export default function UpdateGroup() {
   const [group, setGroup] = useState<any>(null);
@@ -50,7 +51,7 @@ export default function UpdateGroup() {
       console.log('Updating group with data:', updatedGroup);
       const response = await updateGroup(id, updatedGroup);
       console.log('Group updated:', response);
-      router.push('./(tabs)/index'); 
+      router.push('/(tabs)'); 
     } catch (error) {
       console.error('Failed to update group:', error);
       setError('Failed to update group. Please try again.');
@@ -88,6 +89,10 @@ export default function UpdateGroup() {
           />
           {error && <Text style={styles.error}>{error}</Text>}
           <Button title="Update Group" onPress={handleUpdate} />
+          <DeleteGroup 
+        groupId={id} 
+        onDeleted={() => router.push('./(tabs)')} 
+      />
         </View>
       ) : (
         <Text style={styles.info}>Loading group information...</Text>

@@ -1,78 +1,67 @@
-import React, { useState, useEffect } from 'react';
+// app/(tabs)/user/settings.tsx
+import React, { useContext, useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Alert } from 'react-native';
-import { fetchCurrentUser, updateUser, deleteUser, getUserById } from '@/app/services/api/userApi';
 import { useRouter } from 'expo-router';
+import { updateUser, deleteUser } from '@/app/services/api/userApi';
+import { UserContext } from '../../context/UserContext';
 
 export default function UserSettings() {
-  const [user, setUser] = useState<any>(null);
+  const userContext = useContext(UserContext);
+  if (!userContext) {
+    throw new Error('UserSettings must be wrapped in a UserProvider');
+  }
+  const { user, refreshUser } = userContext;
+  const router = useRouter();
+
   const [name, setName] = useState('');
   const [level, setLevel] = useState('');
   const [availability, setAvailability] = useState('');
   const [accountStatus, setAccountStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        console.log('Loading user information...');
-        const data = await fetchCurrentUser();
-        console.log('User information loaded:', data);
-        setUser(data);
-        setName(data.name);
-        setLevel(data.level);
-        setAvailability(data.availability);
-        setAccountStatus(data.accountStatus);
-      } catch (error) {
-        console.error('Failed to fetch user information:', error);
-      }
-    };
-
-    loadUser();
-  }, []);
+    if (user) {
+      setName(user.name);
+      setLevel(user.level);
+      setAvailability(user.availability);
+      setAccountStatus(user.accountStatus);
+    }
+  }, [user]);
 
   const handleUpdate = async () => {
     try {
+      if (!user || !user._id) throw new Error('User not loaded yet.');
       const updatedUser = { name, level, availability, accountStatus };
-      console.log('Updating user information with data:', updatedUser);
-      const response = await updateUser(user._id, updatedUser);
-      console.log('User information updated:', response);
-      setUser(response);
+      await updateUser(user._id, updatedUser);
+
+      // After updating on the server, refresh the user in context
+      await refreshUser();
+
       setError(null);
-      // await getUserById(id);
-    } catch (error) {
-      console.error('Failed to update user information:', error);
-      setError('Failed to update user information. Please try again.');
+    } catch (err) {
+      console.error('Failed to update user:', err);
+      setError('Failed to update user. Please try again.');
     }
   };
 
   const handleDelete = async () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you sure you want to delete your account?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
+    if (!user || !user._id) return;
+    Alert.alert('Delete Account', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteUser(user._id);
+            router.push('/');
+          } catch (err) {
+            console.error('Failed to delete user:', err);
+            setError('Failed to delete user. Please try again.');
+          }
         },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('Deleting user account...');
-              await deleteUser(user._id);
-              console.log('User account deleted');
-              router.push('/');
-            } catch (error) {
-              console.error('Failed to delete user account:', error);
-              setError('Failed to delete user account. Please try again.');
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+      },
+    ]);
   };
 
   return (
@@ -104,16 +93,21 @@ export default function UserSettings() {
             value={accountStatus}
             onChangeText={setAccountStatus}
           />
+
           {error && <Text style={styles.error}>{error}</Text>}
+
           <Button title="Update Info" onPress={handleUpdate} />
           <Button title="Delete Account" onPress={handleDelete} color="red" />
         </View>
       ) : (
-        <Text style={styles.info}>Loading user information...</Text>
+        <Text>Loading user information...</Text>
       )}
     </View>
   );
 }
+
+
+
 
 const styles = StyleSheet.create({
   container: {

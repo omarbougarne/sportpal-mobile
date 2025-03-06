@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import apiClient from './apiClient';
 
 export const fetchGroups = async () => {
@@ -12,15 +13,22 @@ export const fetchGroups = async () => {
     }
 };
 
-export const joinGroup = async (groupId: string) => {
+
+
+export const joinGroupByName = async (groupName: string, userId: string) => {
     try {
-        const response = await apiClient.post(`/groups/${groupId}/join`);
+        console.log(`User ${userId} attempting to join group ${groupName}`);
+        // Use RESTful resource pattern where the resource (group) is in the path
+        const response = await apiClient.post(`/groups/${encodeURIComponent(groupName)}/join`, { userId });
+        console.log('Join group response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error joining group:', error);
+        console.error('Error joining group by name:', error);
         throw error;
     }
 };
+
+
 
 export const searchGroups = async (query: string) => {
     try {
@@ -44,9 +52,11 @@ export const getGroupById = async (groupId: string) => {
     }
 };
 
-export const createGroup = async (groupData: any) => {
+export const createGroup = async (groupData: any, userId: string) => {
     try {
-        const response = await apiClient.post('/groups', groupData);
+        const response = await apiClient.post(`/groups/create/${userId}`, groupData);
+        // console.log(response);
+
         return response.data;
     } catch (error) {
         console.error('Error creating group:', error);
@@ -56,7 +66,7 @@ export const createGroup = async (groupData: any) => {
 
 export const updateGroup = async (groupId: string, groupData: any) => {
     try {
-        const response = await apiClient.put(`/groups/${groupId}`, groupData);
+        const response = await apiClient.patch(`/groups/${groupId}`, groupData);
         return response.data;
     } catch (error) {
         console.error('Error updating group:', error);
@@ -103,5 +113,7 @@ export const addMessageToGroup = async (groupId: string, messageId: string) => {
         throw error;
     }
 };
+
+
 
 

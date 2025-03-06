@@ -3,6 +3,9 @@ export interface User {
     name: string;
     email: string;
     role: string;
+    level: string,
+    availability: string,
+    accountStatus: string,
     createdAt: Date;
     updatedAt: Date;
 }

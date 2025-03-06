@@ -5,11 +5,16 @@ import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { UserProvider } from './context/UserContext';
+import { GroupsProvider } from './context/GroupContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
+    
+    <UserProvider>
+      <GroupsProvider>
     <ThemeProvider value={DefaultTheme}>
       <Stack
         screenOptions={{
@@ -37,5 +42,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
+    </GroupsProvider>
+    </UserProvider>
   );
 }
