@@ -4,4 +4,5 @@ export interface Group {
     sport: string;
     activity: string;
     location: string;
+    members: []
 }

@@ -42,16 +42,6 @@ export default function TabLayout() {
               ),
             }}
           />
-          <Tabs.Screen
-            name="user/settings"
-            options={{
-              title: 'Edit',
-              tabBarIcon: ({ color, size }) => (
-                <Ionicons name="person-outline" color={color} size={size} />
-              ),
-              tabBarButton: () => null, // Hide from tab bar
-            }}
-          />
         </Tabs>
       
   );

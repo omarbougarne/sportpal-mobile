@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { getGroupById, updateGroup } from '@/app/services/api/groupApi';
 import { useRouter, useLocalSearchParams } from 'expo-router'; 
-import DeleteGroup from './DeleteGroup';
-
-export default function UpdateGroup() {
+// import DeleteGroup from '../../components/DeleteGroup';
+interface UpdateGroupProps {
+  id: string;
+}
+export default function UpdateGroup({ id }: UpdateGroupProps) {
   const [group, setGroup] = useState<any>(null);
   const [name, setName] = useState('');
   const [sport, setSport] = useState('');
@@ -14,7 +16,7 @@ export default function UpdateGroup() {
   const router = useRouter();
 
   
-  const { id } = useLocalSearchParams<{ id: string }>(); 
+  // const { id } = useLocalSearchParams<{ id: string }>(); 
 
   useEffect(() => {
     if (!id) {
@@ -89,10 +91,10 @@ export default function UpdateGroup() {
           />
           {error && <Text style={styles.error}>{error}</Text>}
           <Button title="Update Group" onPress={handleUpdate} />
-          <DeleteGroup 
+          {/* <DeleteGroup 
         groupId={id} 
         onDeleted={() => router.push('./(tabs)')} 
-      />
+      /> */}
         </View>
       ) : (
         <Text style={styles.info}>Loading group information...</Text>

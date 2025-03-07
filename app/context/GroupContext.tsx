@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchGroups, createGroup, updateGroup, deleteGroup, joinGroupByName, getGroupById } from '@/app/services/api/groupApi';
+import { fetchGroups, createGroup, updateGroup, deleteGroup, joinGroupByName, getGroupById, fetchUserGroups } from '@/app/services/api/groupApi';
 import { Group } from '@/app/types/group';
 import { getUserById } from '../services/api/userApi';
 import { UserContext } from './UserContext';
@@ -14,6 +14,7 @@ interface GroupsContextProps {
   removeGroup: (groupId: string) => Promise<void>;
   joinGroupByNameContext: (groupName: string) => Promise<void>;
   findGroupById: (groupId: string) => Promise<Group | null>;
+  getUserGroups: () => Promise<Group[]>;
 }
 
 
@@ -24,6 +25,7 @@ export const GroupsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  
   const { user } = useContext(UserContext)!; 
 
   // Fetch groups initially
@@ -109,9 +111,21 @@ export const GroupsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return null;
     }
   };
+const getUserGroups = async (): Promise<Group[]> => {
+  try {
+    if (!user || !user._id) {
+      throw new Error("User not logged in or user ID not found");
+    }
 
+    const userGroups = await fetchUserGroups(user._id);
+    return userGroups;
+  } catch (error) {
+    console.error("Error fetching user groups:", error);
+    return [];
+  }
+};
   return (
-    <GroupsContext.Provider value={{ groups, loading, error, fetchAllGroups, addGroup, editGroup, removeGroup, joinGroupByNameContext, findGroupById }}>
+    <GroupsContext.Provider value={{ groups, loading, error, fetchAllGroups, addGroup, editGroup, removeGroup, joinGroupByNameContext, findGroupById, getUserGroups }}>
       {children}
     </GroupsContext.Provider>
   );

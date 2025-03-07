@@ -13,8 +13,6 @@ export const fetchGroups = async () => {
     }
 };
 
-
-
 export const joinGroupByName = async (groupName: string, userId: string) => {
     try {
         console.log(`User ${userId} attempting to join group ${groupName}`);
@@ -27,8 +25,6 @@ export const joinGroupByName = async (groupName: string, userId: string) => {
         throw error;
     }
 };
-
-
 
 export const searchGroups = async (query: string) => {
     try {
@@ -110,6 +106,18 @@ export const addMessageToGroup = async (groupId: string, messageId: string) => {
         return response.data;
     } catch (error) {
         console.error('Error adding message to group:', error);
+        throw error;
+    }
+};
+
+export const fetchUserGroups = async (userId: string) => {
+    try {
+        console.log(`Fetching groups for user ${userId}...`);
+        const response = await apiClient.get(`/groups/member/${userId}`);
+        console.log(`Fetched ${response.data.length} groups for user:`, response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching user groups:', error);
         throw error;
     }
 };

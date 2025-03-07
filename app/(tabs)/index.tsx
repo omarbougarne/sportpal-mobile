@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react
 import { useRouter } from 'expo-router';
 import { UserContext } from '../context/UserContext';
 import { useGroups } from '../context/GroupContext'; // Assuming this exists
+import UpdateGroup from '../components/group/UpdateGroup';
 
 export default function Index() {
   const router = useRouter();
@@ -56,11 +57,11 @@ export default function Index() {
             <Text style={styles.groupDetail}>Activity: {item.activity}</Text>
             <Text style={styles.groupDetail}>Location: {item.location}</Text>
             <TouchableOpacity
-              style={styles.button}
-              onPress={() => router.push(`./group/UpdateGroup?id=${item._id}`)}
-            >
-              <Text style={styles.buttonText}>Update Group</Text>
-            </TouchableOpacity>
+  style={styles.button}
+  onPress={() => router.push(`./group/${item._id}`)}
+>
+  <Text style={styles.buttonText}>Update Group</Text>
+</TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, { 
                 backgroundColor: user && user._id ? 'green' : '#999' 
