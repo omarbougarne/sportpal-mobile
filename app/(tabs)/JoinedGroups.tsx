@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useGroups } from '../../context/GroupContext';
-import { Group } from '../../types/group';
+import { useGroups } from '../context/GroupContext';
+import { Group } from '../types/group';
 
 interface JoinedGroupsProps {
   onRefresh?: () => void;

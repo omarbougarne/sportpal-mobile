@@ -42,6 +42,24 @@ export default function TabLayout() {
               ),
             }}
           />
+          <Tabs.Screen
+            name="JoinedGroups"
+            options={{
+              title: 'Groups',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="person-outline" color={color} size={size} />
+              ),
+            }}
+          />
+          <Tabs.Screen
+            name="user/settings"
+            options={{
+              title: 'Settings',
+              tabBarIcon: ({ color, size }) => (
+                <Ionicons name="person-outline" color={color} size={size} />
+              ),
+            }}
+          />
         </Tabs>
       
   );
