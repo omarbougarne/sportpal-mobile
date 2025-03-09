@@ -7,6 +7,7 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { UserProvider } from './context/UserContext';
 import { GroupsProvider } from './context/GroupContext';
+import { WorkoutProvider } from './context/workoutContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -15,6 +16,7 @@ export default function RootLayout() {
     
     <UserProvider>
       <GroupsProvider>
+        <WorkoutProvider>
     <ThemeProvider value={DefaultTheme}>
       <Stack
         screenOptions={{
@@ -42,6 +44,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
+    </WorkoutProvider>
     </GroupsProvider>
     </UserProvider>
   );
