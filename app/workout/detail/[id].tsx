@@ -1,24 +1,23 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import EditWorkoutContainer from '@/app/containers/workout/EditWorkoutContainer';
+import WorkoutDetailContainer from '@/app/containers/workout/WorkoutDetailContainer';
 
-export default function EditWorkoutScreen() {
-  // Get the workout ID from the route params
+export default function WorkoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   
   if (!id) {
-    return null; // Or show an error if ID is missing
+    return null;
   }
 
   return (
     <>
       <Stack.Screen options={{ 
-        title: 'Edit Workout',
-        headerBackTitle: 'Back' 
+        title: 'Workout Details',
+        headerBackTitle: 'Back'
       }} />
       <View style={styles.container}>
-        <EditWorkoutContainer id={id} />
+        <WorkoutDetailContainer id={id} />
       </View>
     </>
   );

@@ -1,136 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { 
   View, Text, StyleSheet, TextInput, ScrollView, 
-  TouchableOpacity, Alert, ActivityIndicator 
+  TouchableOpacity, ActivityIndicator 
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getWorkoutById, updateWorkout } from '@/app/services/api/workoutApi';
-import { Workout } from '@/app/types/workout';
+import { EditWorkoutUIProps } from '@/app/types/workout';
 
-interface EditWorkoutProps {
-  id: string;
-  onSuccess?: (workout: Workout) => void;
-}
-
-export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
-  const [workout, setWorkout] = useState<Workout | null>(null);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [duration, setDuration] = useState('');
-  const [intensity, setIntensity] = useState('Medium');
-  const [exercises, setExercises] = useState<string[]>(['']);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showIntensityDropdown, setShowIntensityDropdown] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    fetchWorkout();
-  }, [id]);
-
-  const fetchWorkout = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getWorkoutById(id);
-      setWorkout(data);
-      
-      // Populate form fields
-      setName(data.name || '');
-      setDescription(data.description || '');
-      setDuration(data.duration?.toString() || '');
-      setIntensity(data.intensity || 'Medium');
-      setExercises(data.exercises?.length ? [...data.exercises] : ['']);
-    } catch (err) {
-      console.error('Error fetching workout:', err);
-      setError('Failed to load workout details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddExercise = () => {
-    setExercises([...exercises, '']);
-  };
-
-  const handleExerciseChange = (text: string, index: number) => {
-    const newExercises = [...exercises];
-    newExercises[index] = text;
-    setExercises(newExercises);
-  };
-
-  const handleRemoveExercise = (index: number) => {
-    if (exercises.length > 1) {
-      const newExercises = [...exercises];
-      newExercises.splice(index, 1);
-      setExercises(newExercises);
-    }
-  };
-
-  const validateForm = () => {
-    if (!name.trim()) {
-      Alert.alert('Error', 'Workout name is required');
-      return false;
-    }
-    
-    if (isNaN(Number(duration)) || Number(duration) <= 0) {
-      Alert.alert('Error', 'Please enter a valid duration in minutes');
-      return false;
-    }
-    
-    // Filter out empty exercise inputs
-    const validExercises = exercises.filter(ex => ex.trim() !== '');
-    if (validExercises.length === 0) {
-      Alert.alert('Error', 'Please add at least one exercise');
-      return false;
-    }
-    
-    return true;
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
-    try {
-      setSaving(true);
-      
-      const validExercises = exercises.filter(ex => ex.trim() !== '');
-      
-      const workoutData = {
-        name: name.trim(),
-        description: description.trim(),
-        duration: Number(duration),
-        intensity,
-        exercises: validExercises,
-      };
-      
-      const updatedWorkout = await updateWorkout(id, workoutData);
-      
-      Alert.alert(
-        'Success',
-        'Workout updated successfully!',
-        [
-          { 
-            text: 'OK', 
-            onPress: () => {
-              if (onSuccess) {
-                onSuccess(updatedWorkout);
-              } else {
-                router.back();
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      console.error('Error updating workout:', error);
-      Alert.alert('Error', 'Failed to update workout. Please try again.');
-    } finally {
-      setSaving(false);
-    }
-  };
+export default function EditWorkoutUI({
+  name,
+  description,
+  duration,
+  intensity,
+  exercises,
+  loading,
+  saving,
+  error,
+  showIntensityDropdown,
+  onNameChange,
+  onDescriptionChange,
+  onDurationChange,
+  onIntensityChange,
+  onToggleIntensityDropdown,
+  onAddExercise,
+  onRemoveExercise,
+  onExerciseChange,
+  onSubmit,
+  onCancel,
+  onRetry
+}: EditWorkoutUIProps) {
 
   if (loading) {
     return (
@@ -141,19 +38,21 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
     );
   }
 
-  if (error || !workout) {
+  if (error) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>{error || 'Workout not found'}</Text>
-        <TouchableOpacity 
-          style={styles.retryButton}
-          onPress={fetchWorkout}
-        >
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
+        <Text style={styles.errorText}>{error}</Text>
+        {onRetry && (
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={onRetry}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity 
           style={[styles.retryButton, { marginTop: 10 }]}
-          onPress={() => router.back()}
+          onPress={onCancel}
         >
           <Text style={styles.retryButtonText}>Go Back</Text>
         </TouchableOpacity>
@@ -170,7 +69,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
         <TextInput
           style={styles.input}
           value={name}
-          onChangeText={setName}
+          onChangeText={onNameChange}
           placeholder="e.g. Morning Cardio"
         />
       </View>
@@ -180,7 +79,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
         <TextInput
           style={[styles.input, styles.textArea]}
           value={description}
-          onChangeText={setDescription}
+          onChangeText={onDescriptionChange}
           placeholder="Describe your workout..."
           multiline
           numberOfLines={4}
@@ -192,7 +91,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
         <TextInput
           style={styles.input}
           value={duration}
-          onChangeText={setDuration}
+          onChangeText={onDurationChange}
           keyboardType="numeric"
           placeholder="e.g. 30"
         />
@@ -202,7 +101,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
         <Text style={styles.label}>Intensity*</Text>
         <TouchableOpacity 
           style={styles.customPickerButton}
-          onPress={() => setShowIntensityDropdown(!showIntensityDropdown)}
+          onPress={onToggleIntensityDropdown}
         >
           <Text style={styles.pickerText}>{intensity}</Text>
           <Text style={styles.dropdownArrow}>▼</Text>
@@ -218,8 +117,8 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
                   intensity === option && styles.selectedDropdownItem
                 ]}
                 onPress={() => {
-                  setIntensity(option);
-                  setShowIntensityDropdown(false);
+                  onIntensityChange(option);
+                  onToggleIntensityDropdown();
                 }}
               >
                 <Text style={intensity === option ? styles.selectedOptionText : styles.optionText}>
@@ -238,12 +137,12 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
             <TextInput
               style={[styles.input, styles.exerciseInput]}
               value={exercise}
-              onChangeText={(text) => handleExerciseChange(text, index)}
+              onChangeText={(text) => onExerciseChange(text, index)}
               placeholder={`Exercise ${index + 1}`}
             />
             <TouchableOpacity
               style={styles.removeButton}
-              onPress={() => handleRemoveExercise(index)}
+              onPress={() => onRemoveExercise(index)}
               disabled={exercises.length === 1}
             >
               <Ionicons 
@@ -254,7 +153,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
             </TouchableOpacity>
           </View>
         ))}
-        <TouchableOpacity style={styles.addButton} onPress={handleAddExercise}>
+        <TouchableOpacity style={styles.addButton} onPress={onAddExercise}>
           <Ionicons name="add-circle" size={24} color="#4caf50" />
           <Text style={styles.addButtonText}>Add Exercise</Text>
         </TouchableOpacity>
@@ -262,7 +161,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
       
       <TouchableOpacity
         style={[styles.submitButton, saving && styles.disabledButton]}
-        onPress={handleSubmit}
+        onPress={onSubmit}
         disabled={saving}
       >
         {saving ? (
@@ -274,7 +173,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
       
       <TouchableOpacity
         style={styles.cancelButton}
-        onPress={() => router.back()}
+        onPress={onCancel}
         disabled={saving}
       >
         <Text style={styles.cancelButtonText}>Cancel</Text>
@@ -285,6 +184,7 @@ export default function EditWorkout({ id, onSuccess }: EditWorkoutProps) {
   );
 }
 
+// Copy your existing styles here
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -343,15 +243,6 @@ const styles = StyleSheet.create({
     height: 100,
     textAlignVertical: 'top',
   },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 50,
-  },
   exerciseRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -403,53 +294,52 @@ const styles = StyleSheet.create({
   spacer: {
     height: 40,
   },
-  // Add to your StyleSheet
-customPickerButton: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: '#ddd',
-  borderRadius: 8,
-  padding: 12,
-  backgroundColor: '#fff',
-},
-pickerText: {
-  fontSize: 16,
-},
-dropdownArrow: {
-  fontSize: 14,
-},
-dropdownList: {
-  position: 'absolute',
-  top: 85, // Adjust based on your layout
-  left: 0,
-  right: 0,
-  backgroundColor: '#fff',
-  borderWidth: 1,
-  borderColor: '#ddd',
-  borderRadius: 8,
-  zIndex: 1000,
-  elevation: 5,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 2,
-},
-dropdownItem: {
-  padding: 12,
-  borderBottomWidth: 1,
-  borderBottomColor: '#f0f0f0',
-},
-selectedDropdownItem: {
-  backgroundColor: '#e8f4f8',
-},
-optionText: {
-  fontSize: 16,
-},
-selectedOptionText: {
-  fontSize: 16,
-  fontWeight: 'bold',
-  color: '#2196F3',
-},
+  customPickerButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: '#fff',
+  },
+  pickerText: {
+    fontSize: 16,
+  },
+  dropdownArrow: {
+    fontSize: 14,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: 85,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    zIndex: 1000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  selectedDropdownItem: {
+    backgroundColor: '#e8f4f8',
+  },
+  optionText: {
+    fontSize: 16,
+  },
+  selectedOptionText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2196F3',
+  },
 });

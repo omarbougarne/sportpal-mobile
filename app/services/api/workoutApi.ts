@@ -7,12 +7,24 @@ import { Workout } from '@/app/types/workout'; // Import from your types folder
  */
 export const createWorkout = async (workoutData: Partial<Workout>): Promise<Workout> => {
     try {
-        console.log('Creating workout:', workoutData);
-        const response = await apiClient.post('/workouts', workoutData);
-        console.log('Workout created:', response.data);
+        // Transform the workout data to match your backend DTO structure
+        const apiData = {
+            title: workoutData.name,  // Convert from name to title for backend
+            description: workoutData.description,
+            workoutType: workoutData.intensity === 'ADVANCED' ? 'CARDIO' : 'STRENGTH',  // Map as needed
+            difficultyLevel: workoutData.intensity,
+            duration: workoutData.duration,
+            caloriesBurn: 0,  // Default value since it's required by backend
+            exercises: workoutData.exercises?.map(ex => ({ name: ex })),  // Transform to objects
+            creator: workoutData.creator,
+        };
+
+        console.log('API client: sending data to backend:', apiData);
+
+        const response = await apiClient.post('/workouts', apiData);
         return response.data;
-    } catch (error) {
-        console.error('Error creating workout:', error);
+    } catch (error: any) {
+        console.error('API client error:', error);
         throw error;
     }
 };
@@ -31,8 +43,31 @@ export const getWorkouts = async (queryParams?: {
     try {
         console.log('Fetching workouts with params:', queryParams);
         const response = await apiClient.get('/workouts', { params: queryParams });
-        console.log(`Fetched ${response.data.length} workouts`);
-        return response.data;
+
+        // Check if response.data exists and is an array
+        if (response.data && Array.isArray(response.data)) {
+            console.log(`Fetched ${response.data.length} workouts`);
+            return response.data;
+        } else if (response.data) {
+            // If data exists but isn't an array, check if it has a results property
+            // Many APIs return { results: [] } or { workouts: [] }
+            const possibleArrayFields = ['results', 'workouts', 'data', 'items'];
+
+            for (const field of possibleArrayFields) {
+                if (Array.isArray(response.data[field])) {
+                    console.log(`Fetched ${response.data[field].length} workouts from ${field} field`);
+                    return response.data[field];
+                }
+            }
+
+            // If we get here and data exists but not in expected format
+            console.warn('API returned data in unexpected format:', response.data);
+            return [];
+        } else {
+            // No data at all
+            console.warn('API returned no data');
+            return [];
+        }
     } catch (error) {
         console.error('Error fetching workouts:', error);
         throw error;

@@ -1,193 +1,153 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  getWorkouts, 
-  getMyWorkouts, 
-  getWorkoutById, 
-  createWorkout, 
-  updateWorkout, 
-  deleteWorkout 
-} from '../services/api/workoutApi';
-import { Workout } from '../types/workout';
-import { UserContext } from './UserContext';
+import React, { createContext, useState, useContext, ReactNode } from 'react';
+import { Workout } from '@/app/types/workout';
+import { getWorkouts as apiFetchWorkouts, 
+         getWorkoutById, 
+         createWorkout as apiCreateWorkout,
+         updateWorkout as apiUpdateWorkout,
+         deleteWorkout as apiDeleteWorkout } from '@/app/services/api/workoutApi';
 
+// Update the interface to include the missing properties
 interface WorkoutContextType {
   workouts: Workout[];
-  myWorkouts: Workout[];
+  currentWorkout: Workout | null;
   loading: boolean;
   error: string | null;
-  fetchWorkouts: (params?: any) => Promise<void>;
-  fetchMyWorkouts: () => Promise<void>;
+  fetchWorkouts: () => Promise<void>;
   getWorkout: (id: string) => Promise<Workout | null>;
-  addWorkout: (workoutData: Partial<Workout>) => Promise<Workout>;
-  editWorkout: (id: string, workoutData: Partial<Workout>) => Promise<Workout>;
-  removeWorkout: (id: string) => Promise<void>;
+  createWorkout: (workout: Partial<Workout>) => Promise<Workout>;
+  editWorkout: (id: string, workout: Partial<Workout>) => Promise<Workout>;
+  deleteWorkout: (id: string) => Promise<boolean>;
+  setCurrentWorkout: (workout: Workout | null) => void;
 }
 
-const WorkoutContext = createContext<WorkoutContextType | null>(null);
+const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
 
 export const WorkoutProvider: React.FC<{children: ReactNode}> = ({ children }) => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [myWorkouts, setMyWorkouts] = useState<Workout[]>([]);
+  const [currentWorkout, setCurrentWorkout] = useState<Workout | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useContext(UserContext)!; 
 
-  // Fetch all workouts
-  const fetchWorkouts = async (params?: any) => {
+  const fetchWorkouts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getWorkouts(params);
+      const data = await apiFetchWorkouts();
       setWorkouts(data);
-      console.log(`Fetched ${data.length} workouts`);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching workouts:', err);
-      setError('Failed to fetch workouts');
+      setError(err.message || 'Failed to fetch workouts');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch current user's workouts
-  const fetchMyWorkouts = async () => {
-    try {
-      if (!user) {
-        console.log('No user logged in, skipping my workouts fetch');
-        return;
-      }
-      
-      setLoading(true);
-      setError(null);
-      const data = await getMyWorkouts();
-      setMyWorkouts(data);
-      console.log(`Fetched ${data.length} of my workouts`);
-    } catch (err) {
-      console.error('Error fetching my workouts:', err);
-      setError('Failed to fetch your workouts');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Get a single workout by ID
   const getWorkout = async (id: string): Promise<Workout | null> => {
     try {
       setLoading(true);
       setError(null);
-      return await getWorkoutById(id);
-    } catch (err) {
+      const workout = await getWorkoutById(id);
+      setCurrentWorkout(workout);
+      return workout;
+    } catch (err: any) {
       console.error(`Error fetching workout ${id}:`, err);
-      setError('Failed to fetch workout details');
+      setError(err.message || 'Failed to fetch workout details');
       return null;
     } finally {
       setLoading(false);
     }
   };
 
-  // Create a new workout
-  const addWorkout = async (workoutData: Partial<Workout>): Promise<Workout> => {
+  const createWorkout = async (workoutData: any): Promise<Workout> => {
     try {
       setLoading(true);
       setError(null);
-      const newWorkout = await createWorkout(workoutData);
       
-      // Update both workout lists
-      setWorkouts(prev => [newWorkout, ...prev]);
-      setMyWorkouts(prev => [newWorkout, ...prev]);
+      console.log('Creating workout with frontend data:', workoutData);
       
+      // Send data as-is to the API - don't try to transform it here
+      // Let the API client handle any necessary transformations
+      const newWorkout = await apiCreateWorkout(workoutData);
+      
+      console.log('API response - New workout created:', newWorkout);
+      
+      // Update state with the new workout
+      setWorkouts(prev => [...prev, newWorkout]);
       return newWorkout;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating workout:', err);
-      setError('Failed to create workout');
+      
+      if (err.response) {
+        console.error('API error response:', {
+          status: err.response.status,
+          data: err.response.data
+        });
+      }
+      
+      setError(err.message || 'Failed to create workout');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Update an existing workout
   const editWorkout = async (id: string, workoutData: Partial<Workout>): Promise<Workout> => {
     try {
       setLoading(true);
       setError(null);
-      const updatedWorkout = await updateWorkout(id, workoutData);
-      
-      // Update workout in both lists
-      setWorkouts(prev => prev.map(workout => 
-        workout._id === id ? updatedWorkout : workout
-      ));
-      setMyWorkouts(prev => prev.map(workout => 
-        workout._id === id ? updatedWorkout : workout
-      ));
-      
+      const updatedWorkout = await apiUpdateWorkout(id, workoutData);
+      setWorkouts(prev => prev.map(w => w._id === id ? updatedWorkout : w));
+      setCurrentWorkout(updatedWorkout);
       return updatedWorkout;
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Error updating workout ${id}:`, err);
-      setError('Failed to update workout');
+      setError(err.message || 'Failed to update workout');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete a workout
-  const removeWorkout = async (id: string): Promise<void> => {
+  const deleteWorkout = async (id: string): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
-      await deleteWorkout(id);
-      
-      // Remove workout from both lists
-      setWorkouts(prev => prev.filter(workout => workout._id !== id));
-      setMyWorkouts(prev => prev.filter(workout => workout._id !== id));
-      
-    } catch (err) {
+      await apiDeleteWorkout(id);
+      setWorkouts(prev => prev.filter(w => w._id !== id));
+      if (currentWorkout?._id === id) {
+        setCurrentWorkout(null);
+      }
+      return true;
+    } catch (err: any) {
       console.error(`Error deleting workout ${id}:`, err);
-      setError('Failed to delete workout');
+      setError(err.message || 'Failed to delete workout');
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Initial load of workouts
-  useEffect(() => {
-    fetchWorkouts();
-  }, []);
-
-  // Load my workouts when user changes
-  useEffect(() => {
-    if (user && user._id) {
-      fetchMyWorkouts();
-    } else {
-      setMyWorkouts([]);
-    }
-  }, [user]);
-
   return (
-    <WorkoutContext.Provider
-      value={{
-        workouts,
-        myWorkouts,
-        loading,
-        error,
-        fetchWorkouts,
-        fetchMyWorkouts,
-        getWorkout,
-        addWorkout,
-        editWorkout,
-        removeWorkout,
-      }}
-    >
+    <WorkoutContext.Provider value={{
+      workouts,
+      currentWorkout,
+      loading,
+      error,
+      fetchWorkouts,
+      getWorkout,
+      createWorkout,
+      editWorkout,
+      deleteWorkout,
+      setCurrentWorkout,
+    }}>
       {children}
     </WorkoutContext.Provider>
   );
 };
 
-// Custom hook to use the WorkoutContext
 export const useWorkouts = () => {
   const context = useContext(WorkoutContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useWorkouts must be used within a WorkoutProvider');
   }
   return context;
