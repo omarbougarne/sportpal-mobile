@@ -4,22 +4,9 @@ import {
   TouchableOpacity, ActivityIndicator 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { WorkoutType, DifficultyLevel } from '@/app/types/workout/enums/workout-enum';
 // These should match your backend enums
-enum WorkoutType {
-  CARDIO = 'CARDIO',
-  STRENGTH = 'STRENGTH',
-  FLEXIBILITY = 'FLEXIBILITY',
-  HIIT = 'HIIT',
-  CROSSFIT = 'CROSSFIT',
-  YOGA = 'YOGA'
-}
 
-enum DifficultyLevel {
-  BEGINNER = 'BEGINNER',
-  INTERMEDIATE = 'INTERMEDIATE',
-  ADVANCED = 'ADVANCED'
-}
 
 interface CreateWorkoutUIProps {
   title: string;
@@ -45,6 +32,7 @@ interface CreateWorkoutUIProps {
   onExerciseChange: (text: string, index: number) => void;
   onSubmit: () => void;
   onCancel: () => void;
+  isEditMode: boolean;
 }
 
 export default function CreateWorkoutUI({

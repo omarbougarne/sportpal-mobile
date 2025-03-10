@@ -4,7 +4,7 @@ import {
   TouchableOpacity, ActivityIndicator 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { EditWorkoutUIProps } from '@/app/types/workout';
+import { EditWorkoutUIProps } from '@/app/types/workout/EditWorkoutUIProps';
 
 export default function EditWorkoutUI({
   name,

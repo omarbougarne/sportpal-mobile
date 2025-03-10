@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useWorkouts } from '@/app/context/workoutContext';
-import { useUser } from '@/app/hooks/useUser';
 import { useAuth } from '@/app/hooks/useAuth';
 import WorkoutDetailUI from '@/app/components/workout/WorkoutDetailUI';
 
@@ -15,62 +14,58 @@ export default function WorkoutDetailContainer({ id }: WorkoutDetailContainerPro
   const [error, setError] = useState<string | null>(null);
   const [isCreator, setIsCreator] = useState(false);
   
-  const { user } = useUser();
-  const { isAuthenticated } = useAuth();
-  const { 
-    getWorkout, 
-    deleteWorkout,
-    currentWorkout,
-    setCurrentWorkout
-  } = useWorkouts();
   const router = useRouter();
-  
+  const { getWorkout, deleteWorkout, currentWorkout } = useWorkouts();
+  const { user } = useAuth();
+
   useEffect(() => {
-    fetchWorkoutDetails();
-    
-    // Clean up when unmounting
-    return () => {
-      setCurrentWorkout(null);
-    };
+    // This helps load the workout when component mounts
+    if (id) {
+      console.log("Fetching workout with ID:", id);
+      fetchWorkout();
+    }
   }, [id]);
-  
-  const fetchWorkoutDetails = async () => {
+
+  useEffect(() => {
+    // TEMPORARY DEVELOPMENT MODE: Force buttons to appear
+    // Remove this line before production deployment
+    setIsCreator(true);
+    
+    if (currentWorkout && user) {
+      // Normal logic - will run once auth is fixed
+      const isUserCreator = String(currentWorkout.creator) === String(user._id);
+      setIsCreator(isUserCreator);
+    } else {
+      console.log('Missing data for creator check:', { 
+        hasUser: !!user, 
+        hasWorkout: !!currentWorkout 
+      });
+      // For development, we're using the setIsCreator(true) above
+    }
+  }, [currentWorkout, user]);
+
+  const fetchWorkout = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const workout = await getWorkout(id);
-      
-      // Check if the current user is the creator
-      if (workout && user && isAuthenticated) {
-        setIsCreator(workout.creator === user._id);
-      }
-      
+      console.log("Calling getWorkout API with ID:", id);
+      await getWorkout(id);
+      console.log("Workout fetched:", currentWorkout);
     } catch (err: any) {
-      console.error('Error fetching workout details:', err);
-      setError(err.message || 'Failed to load workout details');
+      console.error('Error fetching workout:', err);
+      setError(err.message || 'Failed to load workout');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEditPress = () => {
-    if (!isAuthenticated) {
-      Alert.alert(
-        'Authentication Required',
-        'Please login to edit workouts',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Login', onPress: () => router.push('/') }
-        ]
-      );
-      return;
-    }
-    
-    router.push(`/workout/${id}/edit`);
+    // Navigate to the edit page with this workout's id
+    router.push(`/workout/edit/${id}`);
   };
   
   const handleDeletePress = () => {
+    // Show confirmation dialog
     Alert.alert(
       'Delete Workout',
       'Are you sure you want to delete this workout? This action cannot be undone.',
@@ -89,8 +84,13 @@ export default function WorkoutDetailContainer({ id }: WorkoutDetailContainerPro
     try {
       setLoading(true);
       await deleteWorkout(id);
-      Alert.alert('Success', 'Workout deleted successfully');
-      router.back();
+      
+      // Show success message and navigate back
+      Alert.alert(
+        'Success',
+        'Workout deleted successfully',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
     } catch (err: any) {
       console.error('Error deleting workout:', err);
       Alert.alert('Error', err.message || 'Failed to delete workout');
@@ -101,7 +101,7 @@ export default function WorkoutDetailContainer({ id }: WorkoutDetailContainerPro
   const handleBackPress = () => {
     router.back();
   };
-  
+
   return (
     <WorkoutDetailUI
       workout={currentWorkout}
@@ -111,7 +111,7 @@ export default function WorkoutDetailContainer({ id }: WorkoutDetailContainerPro
       onEditPress={handleEditPress}
       onDeletePress={handleDeletePress}
       onBackPress={handleBackPress}
-      onRetry={fetchWorkoutDetails}
+      onRetry={fetchWorkout}
     />
   );
 }

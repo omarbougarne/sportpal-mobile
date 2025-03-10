@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useWorkouts } from '@/app/context/workoutContext';
 import WorkoutListUI from '@/app/components/workout/WorkoutListUI';
-import { Workout } from '@/app/types/workout';
+import { Workout } from '@/app/types/workout/workout';
 
 export default function WorkoutListContainer() {
   const { 

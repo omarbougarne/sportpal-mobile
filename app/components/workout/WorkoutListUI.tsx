@@ -9,7 +9,7 @@ import {
   RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Workout } from '@/app/types/workout';
+import { Workout } from '@/app/types/workout/workout';
 
 interface WorkoutListUIProps {
   workouts: Workout[];  // Array of workouts

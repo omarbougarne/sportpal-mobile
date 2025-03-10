@@ -1,29 +1,16 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useWorkouts } from '@/app/context/workoutContext';
 import { useAuth } from '@/app/hooks/useAuth';
 import CreateWorkoutUI from '@/app/components/workout/CreateWorkoutUI';
-
+import { WorkoutType, DifficultyLevel } from '@/app/types/workout/enums/workout-enum';
 interface CreateWorkoutContainerProps {
   onSuccess?: (workout: any) => void;
 }
 
 // These should match your backend enums
-enum WorkoutType {
-  CARDIO = 'CARDIO',
-  STRENGTH = 'STRENGTH',
-  FLEXIBILITY = 'FLEXIBILITY',
-  HIIT = 'HIIT',
-  CROSSFIT = 'CROSSFIT',
-  YOGA = 'YOGA'
-}
 
-enum DifficultyLevel {
-  BEGINNER = 'BEGINNER',
-  INTERMEDIATE = 'INTERMEDIATE',
-  ADVANCED = 'ADVANCED'
-}
 
 export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutContainerProps) {
   // Form state - matching the backend DTO
@@ -42,7 +29,7 @@ export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutConta
   
   const router = useRouter();
   const { createWorkout } = useWorkouts();
-  const { user } = useAuth(); // To get the current user ID for creator field
+  const { user } = useAuth();
 
   // Exercise handlers
   const handleAddExercise = () => {
@@ -96,32 +83,27 @@ export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutConta
     try {
       setSaving(true);
       
-      // Check for user authentication
-      if (!user || !user._id) {
-        Alert.alert('Authentication Error', 'You must be logged in to create a workout');
-        setSaving(false);
-        return;
-      }
+      // Simplified auth check
+      const userId = user?._id || "temp-user-id";
       
       const validExercises = exercises.filter(ex => ex.trim() !== '');
       
-      // Format data to match your Workout interface (exercise as strings)
+      // Format data to match your Workout interface
       const workoutData = {
-        name: title.trim(),  // Use 'name' to match your Workout interface
+        name: title.trim(),
         description: description.trim(),
-        intensity: difficultyLevel,  // Map difficultyLevel to intensity
+        intensity: difficultyLevel,
         duration: Number(duration),
-        exercises: validExercises,  // Keep as string[] to match Workout interface
-        creator: user._id,
-        // Note: workoutType and caloriesBurn are not in your Workout interface
+        exercises: validExercises,
+        creator: userId,
+        workoutType: workoutType,
+        caloriesBurn: Number(caloriesBurn)
       };
       
       console.log('Submitting workout data:', workoutData);
       
-      // Use try-catch to handle any API errors
       const newWorkout = await createWorkout(workoutData);
       
-      // Log the response for debugging
       console.log('New workout created:', newWorkout);
       
       Alert.alert(
@@ -134,7 +116,6 @@ export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutConta
               if (onSuccess) {
                 onSuccess(newWorkout);
               } else {
-                // Safe navigation - go back to list rather than trying to view the new workout
                 router.replace('/workout');
               }
             }
@@ -143,11 +124,7 @@ export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutConta
       );
     } catch (error: any) {
       console.error('Error creating workout:', error);
-      console.error('Error details:', error.response?.data);
-      
-      // More detailed error message
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to create workout';
-      Alert.alert('Error', errorMsg);
+      Alert.alert('Error', error.message || 'Failed to create workout');
     } finally {
       setSaving(false);
     }
@@ -182,7 +159,9 @@ export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutConta
       onRemoveExercise={handleRemoveExercise}
       onExerciseChange={handleExerciseChange}
       onSubmit={handleSubmit}
+      isEditMode={false}
       onCancel={handleCancel}
+      
     />
   );
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { Workout } from '@/app/types/workout';
+import { Workout } from '@/app/types/workout/workout';
 import { getWorkouts as apiFetchWorkouts, 
          getWorkoutById, 
          createWorkout as apiCreateWorkout,
@@ -126,6 +126,8 @@ export const WorkoutProvider: React.FC<{children: ReactNode}> = ({ children }) =
       setLoading(false);
     }
   };
+
+
 
   return (
     <WorkoutContext.Provider value={{

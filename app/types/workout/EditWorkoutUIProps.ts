@@ -1,15 +1,3 @@
-export interface Workout {
-    _id: string;
-    name: string;
-    description?: string;
-    duration?: number;
-    intensity?: string;
-    exercises?: string[];
-    creator: string;
-    createdAt: Date;
-    updatedAt: Date;
-}
-
 export interface EditWorkoutUIProps {
     name: string;
     description: string;
@@ -30,5 +18,5 @@ export interface EditWorkoutUIProps {
     onExerciseChange: (text: string, index: number) => void;
     onSubmit: () => void;
     onCancel: () => void;
-    onRetry?: () => void;
+    onRetry?: () => void;  // Optional prop with ? suffix
 }

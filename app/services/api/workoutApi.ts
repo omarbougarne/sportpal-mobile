@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { Workout } from '@/app/types/workout'; // Import from your types folder
+import { Workout } from '@/app/types/workout/workout'; // Import from your types folder
 
 /**
  * Create a new workout
@@ -11,7 +11,7 @@ export const createWorkout = async (workoutData: Partial<Workout>): Promise<Work
         const apiData = {
             title: workoutData.name,  // Convert from name to title for backend
             description: workoutData.description,
-            workoutType: workoutData.intensity === 'ADVANCED' ? 'CARDIO' : 'STRENGTH',  // Map as needed
+            workoutType: workoutData.intensity === 'Advanced' ? 'Cardio' : 'Strength',  // Map as needed
             difficultyLevel: workoutData.intensity,
             duration: workoutData.duration,
             caloriesBurn: 0,  // Default value since it's required by backend
