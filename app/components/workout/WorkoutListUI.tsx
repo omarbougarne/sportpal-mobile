@@ -6,7 +6,8 @@ import {
   FlatList,
   TouchableOpacity, 
   ActivityIndicator, 
-  RefreshControl
+  RefreshControl,
+  ImageBackground
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Workout } from '@/app/types/workout/workout';
@@ -46,7 +47,7 @@ export default function WorkoutListUI({
         <View style={styles.workoutMetadata}>
           {item.duration && (
             <View style={styles.metadataItem}>
-              <Ionicons name="time-outline" size={14} color="#666" />
+              <Ionicons name="time-outline" size={14} color="#BBBBBB" />
               <Text style={styles.metadataText}>{item.duration} min</Text>
             </View>
           )}
@@ -61,74 +62,109 @@ export default function WorkoutListUI({
           )}
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#999" />
+      <Ionicons name="chevron-forward" size={20} color="#BBBBBB" />
     </TouchableOpacity>
   );
 
   if (loading && workouts.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Loading workouts...</Text>
-      </View>
+      <ImageBackground 
+        source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
+        style={styles.backgroundImage}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color="#4a90e2" />
+            <Text style={styles.loadingText}>Loading workouts...</Text>
+          </View>
+        </View>
+      </ImageBackground>
     );
   }
 
   if (error && workouts.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-          <Text style={styles.retryButtonText}>Try Again</Text>
-        </TouchableOpacity>
-      </View>
+      <ImageBackground 
+        source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
+        style={styles.backgroundImage}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.centerContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ImageBackground>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={workouts}
-        renderItem={renderItem}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="fitness-outline" size={60} color="#ccc" />
-            <Text style={styles.emptyText}>No workouts found</Text>
-            <Text style={styles.emptySubtext}>
-              Create your first workout to get started
-            </Text>
-          </View>
-        }
-      />
-      
-      <TouchableOpacity 
-        style={styles.createButton} 
-        onPress={onCreatePress}
-      >
-        <Ionicons name="add" size={24} color="white" />
-      </TouchableOpacity>
-    </View>
+    <ImageBackground 
+      source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
+      style={styles.backgroundImage}
+    >
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          <FlatList
+            data={workouts}
+            renderItem={renderItem}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl 
+                refreshing={loading} 
+                onRefresh={onRefresh}
+                tintColor="#FFFFFF" 
+                colors={["#4a90e2"]} 
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="fitness-outline" size={60} color="#BBBBBB" />
+                <Text style={styles.emptyText}>No workouts found</Text>
+                <Text style={styles.emptySubtext}>
+                  Create your first workout to get started
+                </Text>
+              </View>
+            }
+          />
+          
+          <TouchableOpacity 
+            style={styles.createButton} 
+            onPress={onCreatePress}
+          >
+            <Ionicons name="add" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
   );
 }
 
 const getIntensityColor = (intensity: string) => {
   switch (intensity.toLowerCase()) {
-    case 'easy': return '#4caf50';
-    case 'medium': return '#ff9800';
-    case 'hard': return '#f44336';
-    default: return '#2196f3';
+    case 'easy': return 'rgba(76, 175, 80, 0.9)';  // Green
+    case 'medium': return 'rgba(255, 152, 0, 0.9)'; // Orange
+    case 'hard': return 'rgba(244, 67, 54, 0.9)';   // Red
+    default: return 'rgba(33, 150, 243, 0.9)';      // Blue
   }
 };
 
 const styles = StyleSheet.create({
+  // Background & Container Styles
+  backgroundImage: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
   },
   centerContainer: {
     flex: 1,
@@ -140,18 +176,22 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 80, // Space for FAB
   },
+  
+  // Workout Item Styles
   workoutItem: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(20, 20, 20, 0.8)',
     borderRadius: 8,
     padding: 16,
     marginBottom: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333333',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   workoutContent: {
     flex: 1,
@@ -159,12 +199,12 @@ const styles = StyleSheet.create({
   workoutName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   workoutDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#BBBBBB',
     marginBottom: 8,
   },
   workoutMetadata: {
@@ -178,7 +218,7 @@ const styles = StyleSheet.create({
   },
   metadataText: {
     fontSize: 12,
-    color: '#666',
+    color: '#BBBBBB',
     marginLeft: 4,
   },
   intensityBadge: {
@@ -194,7 +234,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#555',
+    color: '#FFFFFF',
   },
   errorText: {
     color: 'red',
@@ -221,12 +261,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#555',
+    color: '#FFFFFF',
     marginTop: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#888',
+    color: '#BBBBBB',
     textAlign: 'center',
     marginTop: 5,
   },

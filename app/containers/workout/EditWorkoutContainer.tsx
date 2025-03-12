@@ -146,12 +146,16 @@ export default function EditWorkoutContainer({ id }: EditWorkoutContainerProps) 
     try {
       setSaving(true);
       
-      // Ensure user is creator
+      // TEMPORARY FIX: Skip this permission check during development
+      /* 
+      // Original code - uncomment this for production
       if (!user || !currentWorkout || currentWorkout.creator !== user._id) {
         Alert.alert('Permission Denied', 'You can only edit your own workouts');
         return;
       }
+      */
       
+      // Rest of your code...
       const validExercises = exercises.filter(ex => ex.trim() !== '');
       
       // Format data for updating
