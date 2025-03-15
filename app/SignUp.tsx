@@ -13,38 +13,44 @@ import {
 } from 'react-native';
 import { signup } from '@/app/services/api/authApi';
 import { useRouter } from 'expo-router';
+import CustomDropdown from '@/app/components/CustomDropDown'; // Import the custom dropdown component
 
 export default function SignUp() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // const [role, setRole] = useState('User'); // Default role
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSignUp = async () => {
-  try {
-    // ...existing validation code...
-    
-    const signupData = { name: fullName, email, password };
-    const response = await signup(signupData);
-    
-    if (response.requiresLogin) {
-      // Show message to user
-      Alert.alert(
-        "Account Created", 
-        "Your account has been created. Please log in with your credentials.",
-        [{ text: "OK", onPress: () => router.push('/') }]
-      );
-    } else {
-      // Token was received and stored, redirect to main app
-      router.push('/(tabs)');
+    try {
+      // Validation
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
+      const signupData = { name: fullName, email, password };
+      const response = await signup(signupData);
+      
+      if (response.requiresLogin) {
+        // Show message to user
+        Alert.alert(
+          "Account Created", 
+          "Your account has been created. Please log in with your credentials.",
+          [{ text: "OK", onPress: () => router.push('/') }]
+        );
+      } else {
+        // Token was received and stored, redirect to main app
+        router.push('/(tabs)');
+      }
+    } catch (error) {
+      console.error('Failed to sign up:', error);
+      setError('Failed to sign up. Please try again.');
     }
-  } catch (error) {
-    console.error('Failed to sign up:', error);
-    setError('Failed to sign up. Please try again.');
-  }
-};
+  };
 
   const handleLogin = () => {
     router.push('/');
@@ -52,9 +58,9 @@ export default function SignUp() {
 
   return (
     <ImageBackground 
-          source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
-          style={styles.backgroundImage}
-        >
+      source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
+      style={styles.backgroundImage}
+    >
       <SafeAreaView style={styles.container}>
         <KeyboardAvoidingView 
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -97,6 +103,13 @@ export default function SignUp() {
                 onChangeText={setConfirmPassword}
                 secureTextEntry
               />
+              
+              {/* <CustomDropdown
+                label="Role"
+                options={['User', 'Organizer', 'Admin', 'Trainer']}
+                selectedValue={role}
+                onValueChange={setRole}
+              /> */}
               
               {error && <Text style={styles.error}>{error}</Text>}
               

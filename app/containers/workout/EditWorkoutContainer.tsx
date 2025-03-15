@@ -1,235 +1,208 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useWorkouts } from '@/app/context/workoutContext';
-import { useAuth } from '@/app/hooks/useAuth';
-import CreateWorkoutUI from '@/app/components/workout/CreateWorkoutUI';
-import { Workout } from '@/app/types/workout/workout';
-// Import the shared enums
-import { WorkoutType, DifficultyLevel } from '@/app/types/workout/enums/workout-enum';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import EditWorkoutUI from '@/app/components/workout/EditWorkoutUI';
+import { getWorkoutById, updateWorkout } from '@/app/services/api/workoutApi';
+import { AuthContext } from '@/app/context/AuthContext';
 
-interface EditWorkoutContainerProps {
-  id: string;
-}
-
-export default function EditWorkoutContainer({ id }: EditWorkoutContainerProps) {
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [workoutType, setWorkoutType] = useState<WorkoutType>(WorkoutType.CARDIO);
-  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>(DifficultyLevel.INTERMEDIATE);
-  const [duration, setDuration] = useState('');
-  const [caloriesBurn, setCaloriesBurn] = useState('');
-  const [exercises, setExercises] = useState<string[]>(['']);
+export default function EditWorkoutScreen() {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
+  const { user, isAuthenticated } = useContext(AuthContext);
   
-  // UI state
+  // State variables for form, loading, etc.
+  const [workout, setWorkout] = useState(null);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [duration, setDuration] = useState('');
+  const [intensity, setIntensity] = useState('Medium');
+  const [exercises, setExercises] = useState(['']);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showWorkoutTypeDropdown, setShowWorkoutTypeDropdown] = useState(false);
-  const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false);
-  
-  const router = useRouter();
-  const { getWorkout, editWorkout, currentWorkout } = useWorkouts();
-  const { user } = useAuth();
+  const [error, setError] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [showIntensityDropdown, setShowIntensityDropdown] = useState(false);
 
-  // Load workout data on mount
+  // Fetch workout and check authorization
   useEffect(() => {
-    loadWorkout();
-  }, [id]);
-  
-  // Populate form when workout data is loaded
-  useEffect(() => {
-    if (currentWorkout) {
-      setTitle(currentWorkout.name || '');
-      setDescription(currentWorkout.description || '');
+    async function fetchWorkout() {
+      if (!id) return;
       
-      // Handle workout type mapping
-      if (currentWorkout.workoutType) {
-        try {
-          // Try to map the string to enum value 
-          setWorkoutType(currentWorkout.workoutType as WorkoutType);
-        } catch (e) {
-          console.warn("Could not map workout type:", currentWorkout.workoutType);
+      try {
+        setLoading(true);
+        const data = await getWorkoutById(id as string);
+        setWorkout(data);
+        
+        // Set form values
+        setName(data.name || '');
+        setDescription(data.description || '');
+        setDuration(data.duration ? String(data.duration) : '');
+        setIntensity(data.intensity || 'Medium');
+        setExercises(data.exercises?.length > 0 ? [...data.exercises] : ['']);
+        
+        // Check if current user is the creator
+        console.log('Workout fetched:', data);
+        console.log('Auth check:', { 
+          hasUser: !!user, 
+          hasWorkout: !!data,
+          userId: user?._id,
+          workoutCreatorId: data.creator.toString()
+        });
+        
+        if (user && data.creator) {
+          // Check if the current user ID matches the creator ID
+          const isAuthorized = user._id === data.creator.toString();
+          setIsAuthorized(isAuthorized);
+          console.log(`Authorization result: ${isAuthorized ? 'Authorized' : 'Not authorized'}`);
+        } else {
+          setIsAuthorized(false);
+          console.log('Not authorized: missing user or creator data');
         }
-      }
-      
-      // Handle difficulty level mapping
-      if (currentWorkout.intensity) {
-        try {
-          // Try to map the string to enum value
-          setDifficultyLevel(currentWorkout.intensity as DifficultyLevel);
-        } catch (e) {
-          console.warn("Could not map intensity:", currentWorkout.intensity);
-        }
-      }
-      
-      if (currentWorkout.duration) {
-        setDuration(currentWorkout.duration.toString());
-      }
-      
-      // Populate exercises
-      if (currentWorkout.exercises && currentWorkout.exercises.length > 0) {
-        setExercises(currentWorkout.exercises);
-      } else {
-        setExercises(['']);
-      }
-      
-      // Handle calories burn
-      if (currentWorkout.caloriesBurn) {
-        setCaloriesBurn(currentWorkout.caloriesBurn.toString());
+
+        setError('');
+      } catch (err: any) {
+        console.error('Failed to load workout:', err);
+        setError(err.message || 'Failed to load workout');
+      } finally {
+        setLoading(false);
       }
     }
-  }, [currentWorkout]);
 
-  const loadWorkout = async () => {
-    try {
-      setLoading(true);
-      await getWorkout(id);
-    } catch (error: any) {
-      console.error('Error loading workout:', error);
-      Alert.alert('Error', 'Failed to load workout details');
-      router.back();
-    } finally {
+    if (isAuthenticated) {
+      fetchWorkout();
+    } else {
+      setIsAuthorized(false);
       setLoading(false);
     }
-  };
+  }, [id, user, isAuthenticated]);
 
-  // Exercise handlers
-  const handleAddExercise = () => {
-    setExercises([...exercises, '']);
-  };
-
-  const handleExerciseChange = (text: string, index: number) => {
-    const updatedExercises = [...exercises];
-    updatedExercises[index] = text;
-    setExercises(updatedExercises);
-  };
-
-  const handleRemoveExercise = (index: number) => {
-    if (exercises.length > 1) {
-      const updatedExercises = [...exercises];
-      updatedExercises.splice(index, 1);
-      setExercises(updatedExercises);
-    }
-  };
-
-  // Form validation
-  const validateForm = () => {
-    if (!title.trim()) {
-      Alert.alert('Error', 'Workout title is required');
-      return false;
-    }
-    
-    if (isNaN(Number(duration)) || Number(duration) <= 0) {
-      Alert.alert('Error', 'Please enter a valid duration in minutes');
-      return false;
-    }
-    
-    if (isNaN(Number(caloriesBurn)) || Number(caloriesBurn) <= 0) {
-      Alert.alert('Error', 'Please enter a valid calorie burn amount');
-      return false;
-    }
-    
-    const validExercises = exercises.filter(ex => ex.trim() !== '');
-    if (validExercises.length === 0) {
-      Alert.alert('Error', 'Please add at least one exercise');
-      return false;
-    }
-    
-    return true;
-  };
-
-  // Form submission
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    // Validation
+    if (!isAuthorized) {
+      setError('You don\'t have permission to edit this workout.');
+      return;
+    }
     
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter a workout name');
+      return;
+    }
+    
+    if (!duration.trim() || isNaN(Number(duration)) || Number(duration) <= 0) {
+      Alert.alert('Error', 'Please enter a valid duration');
+      return;
+    }
+    
+    if (!exercises.every(ex => ex.trim())) {
+      Alert.alert('Error', 'Please fill in all exercises or remove empty ones');
+      return;
+    }
+
     try {
       setSaving(true);
       
-      // TEMPORARY FIX: Skip this permission check during development
-      /* 
-      // Original code - uncomment this for production
-      if (!user || !currentWorkout || currentWorkout.creator !== user._id) {
-        Alert.alert('Permission Denied', 'You can only edit your own workouts');
-        return;
-      }
-      */
-      
-      // Rest of your code...
-      const validExercises = exercises.filter(ex => ex.trim() !== '');
-      
-      // Format data for updating
-      const workoutData: Partial<Workout> = {
-        name: title.trim(),
-        description: description.trim(),
-        intensity: difficultyLevel,
+      await updateWorkout(id as string, {
+        name,
+        description,
         duration: Number(duration),
-        exercises: validExercises,
-        // Optional: include these if your API supports them
-        workoutType: workoutType,
-        caloriesBurn: Number(caloriesBurn)
-      };
+        intensity,
+        exercises: exercises.filter(ex => ex.trim()),
+      });
       
-      console.log('Updating workout data:', workoutData);
+      Alert.alert('Success', 'Workout updated successfully!');
+      router.back();
+    } catch (err: any) {
+      console.error('Failed to update workout:', err);
       
-      const updatedWorkout = await editWorkout(id, workoutData);
-      
-      console.log('Workout updated:', updatedWorkout);
-      
-      Alert.alert(
-        'Success',
-        'Workout updated successfully!',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
-    } catch (error: any) {
-      console.error('Error updating workout:', error);
-      Alert.alert('Error', error.message || 'Failed to update workout');
+      if (err.message.includes('permission')) {
+        // Handle permission errors specifically
+        setIsAuthorized(false);
+        setError('You do not have permission to edit this workout.');
+      } else {
+        setError(err.message || 'Failed to update workout');
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  // Cancel handler
-  const handleCancel = () => {
-    router.back();
-  };
-
-  // Create wrapper functions for type compatibility
-  const handleWorkoutTypeChange = (type: WorkoutType) => {
-    setWorkoutType(type);
+  // Helper functions for UI
+  const handleAddExercise = () => {
+    setExercises([...exercises, '']);
   };
   
-  const handleDifficultyLevelChange = (level: DifficultyLevel) => {
-    setDifficultyLevel(level);
+  const handleRemoveExercise = (index: number) => {
+    const updated = [...exercises];
+    updated.splice(index, 1);
+    setExercises(updated.length ? updated : ['']);
+  };
+  
+  const handleExerciseChange = (text: string, index: number) => {
+    const updated = [...exercises];
+    updated[index] = text;
+    setExercises(updated);
+  };
+  
+  const handleRetry = () => {
+    // Implement proper retry logic
+    setError('');
+    setLoading(true);
+    fetchWorkout();
   };
 
-  // In your return statement, use the wrapper functions
+  // Function needed by UI
+  async function fetchWorkout() {
+    if (!id) return;
+    
+    try {
+      const data = await getWorkoutById(id as string);
+      setWorkout(data);
+      
+      // Set form values
+      setName(data.name || '');
+      setDescription(data.description || '');
+      setDuration(data.duration ? String(data.duration) : '');
+      setIntensity(data.intensity || 'Medium');
+      setExercises(data.exercises?.length > 0 ? [...data.exercises] : ['']);
+      
+      if (user && data.creator) {
+        const isAuthorized = user._id === data.creator.toString();
+        setIsAuthorized(isAuthorized);
+      } else {
+        setIsAuthorized(false);
+      }
+      
+      setError('');
+    } catch (err: any) {
+      setError(err.message || 'Failed to load workout');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <CreateWorkoutUI
-      title={title}
+    <EditWorkoutUI
+      name={name}
       description={description}
-      workoutType={workoutType}
-      difficultyLevel={difficultyLevel}
       duration={duration}
-      caloriesBurn={caloriesBurn}
+      intensity={intensity}
       exercises={exercises}
-      saving={saving || loading}
-      showWorkoutTypeDropdown={showWorkoutTypeDropdown}
-      showDifficultyDropdown={showDifficultyDropdown}
-      onTitleChange={setTitle}
+      loading={loading}
+      saving={saving}
+      error={error}
+      isAuthorized={isAuthorized}
+      showIntensityDropdown={showIntensityDropdown}
+      onNameChange={setName}
       onDescriptionChange={setDescription}
-      onWorkoutTypeChange={handleWorkoutTypeChange} // Use wrapper 
-      onDifficultyLevelChange={handleDifficultyLevelChange} // Use wrapper
       onDurationChange={setDuration}
-      onCaloriesBurnChange={setCaloriesBurn}
-      onToggleWorkoutTypeDropdown={() => setShowWorkoutTypeDropdown(!showWorkoutTypeDropdown)}
-      onToggleDifficultyDropdown={() => setShowDifficultyDropdown(!showDifficultyDropdown)}
+      onIntensityChange={setIntensity}
+      onToggleIntensityDropdown={() => setShowIntensityDropdown(!showIntensityDropdown)}
       onAddExercise={handleAddExercise}
       onRemoveExercise={handleRemoveExercise}
       onExerciseChange={handleExerciseChange}
       onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      isEditMode={true} // Add this prop to CreateWorkoutUI if needed
+      onCancel={() => router.back()}
+      onRetry={handleRetry}
     />
   );
 }

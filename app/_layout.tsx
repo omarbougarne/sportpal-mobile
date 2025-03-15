@@ -6,6 +6,7 @@ import { UserProvider } from './context/UserContext';
 import { GroupsProvider } from './context/GroupContext';
 import { WorkoutProvider } from './context/workoutContext';
 import { AuthProvider } from './context/AuthContext'; 
+import { TrainerProvider } from './context/TrainerContext';
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,6 +17,7 @@ export default function RootLayout() {
         <UserProvider isAuthenticated={isAuthenticated}>
           <GroupsProvider>
             <WorkoutProvider>
+              <TrainerProvider>
               <Stack
                 screenOptions={{
                   headerShown: false,
@@ -27,6 +29,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="workout" options={{ headerShown: true }} />
               </Stack>
+              </TrainerProvider>
             </WorkoutProvider>
           </GroupsProvider>
         </UserProvider>

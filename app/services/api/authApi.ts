@@ -6,7 +6,6 @@ export const login = async (loginData: { email: string; password: string }) => {
         console.log('Sending login request with data:', loginData);
         const response = await apiClient.post('/auth/login', loginData);
 
-        // Log the full response to see its structure
         console.log('Full login response data:', JSON.stringify(response.data));
 
         // Check various possible token field names
@@ -15,25 +14,40 @@ export const login = async (loginData: { email: string; password: string }) => {
             response.data.accessToken ||
             (response.data.user && response.data.user.token);
 
+        // Get user data
+        const user = response.data.user || response.data;
+
         if (access_token) {
             console.log('Storing token:', access_token);
             await AsyncStorage.setItem('authToken', access_token);
+
+            // Store user data
+            if (user) {
+                await AsyncStorage.setItem('userData', JSON.stringify(user));
+            }
+
+            return {
+                ...response.data,
+                access_token,
+                user,
+                success: true
+            };
         } else {
             console.error('No token received in response');
             throw new Error('Authentication token not found in response');
         }
-
-        return response.data;
     } catch (error) {
         console.error('Error logging in:', error);
         throw error;
     }
 };
 
+// Similar updates for signup function...
+
 export const signup = async (signupData: { name: string; email: string; password: string }) => {
     try {
         console.log('Sending signup request with data:', signupData);
-        const response = await apiClient.post('/auth/signup', signupData);
+        const response = await apiClient.post('auth/signup', signupData);
 
         // Log the full response to debug
         console.log('Full signup response data:', JSON.stringify(response.data));

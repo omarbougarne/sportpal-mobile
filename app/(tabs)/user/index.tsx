@@ -64,7 +64,7 @@ export default function ProfileScreen() {
                 
                 <TouchableOpacity
                   style={styles.editButton}
-                  onPress={() => router.push('/user/settings')}
+                  onPress={() => router.push('../../components/user/settings')}
                 >
                   <Ionicons name="settings-outline" size={18} color="white" style={styles.buttonIcon} />
                   <Text style={styles.buttonText}>Edit Profile</Text>

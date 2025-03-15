@@ -1,41 +1,43 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, signup as apiSignup } from '@/app/services/api/authApi';
+import { login as apiLogin, signup as apiSignup, logout as apiLogout } from '@/app/services/api/authApi';
+import { fetchCurrentUser } from '@/app/services/api/userApi';
 import { User } from '@/app/types/user';
 
-// Update the interface to include the user property
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: User | null;  // Add this property
+  user: User | null;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
+  refreshUserData: () => Promise<void>;
 }
 
 interface AuthProviderProps {
   children: ReactNode;
-  onAuthChange: (isAuthenticated: boolean) => void;
+  onAuthChange?: (isAuthenticated: boolean) => void;
 }
 
 const defaultContext: AuthContextType = {
   isAuthenticated: false,
-  user: null,  // Initialize as null
+  user: null,
   loading: false,
   error: null,
   login: async () => {},
   signup: async () => {},
   logout: async () => {},
   clearError: () => {},
+  refreshUserData: async () => {},
 };
 
 export const AuthContext = createContext<AuthContextType>(defaultContext);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChange }) => {
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChange = () => {} }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);  // Add state for user
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,90 +45,118 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
-        const userData = await AsyncStorage.getItem('user');
+        setLoading(true);
+        const token = await AsyncStorage.getItem('authToken');
         
         if (token) {
-          setIsAuthenticated(true);
-          // Set the user if available
+          // Get minimal user data from backend using the token
+          const userData = await fetchCurrentUser();
+          
           if (userData) {
-            setUser(JSON.parse(userData));
+            setUser(userData);
+            setIsAuthenticated(true);
+            onAuthChange(true);
+          } else {
+            setIsAuthenticated(false);
+            setUser(null);
+            onAuthChange(false);
           }
-          onAuthChange(true);
         } else {
           setIsAuthenticated(false);
           setUser(null);
           onAuthChange(false);
         }
       } catch (err) {
-        console.error('Error checking auth status:', err);
+        console.error('Auth initialization error:', err);
+        setIsAuthenticated(false);
+        setUser(null);
+        onAuthChange(false);
+      } finally {
+        setLoading(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [onAuthChange]);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
     try {
-      // Fix: Pass a single object with email and password properties
-      const { token, user } = await apiLogin({ email, password });
-      await AsyncStorage.setItem('token', token);
-      // Store user data in AsyncStorage as well
-      await AsyncStorage.setItem('user', JSON.stringify(user));
+      setLoading(true);
+      setError(null);
+      
+      // Call login API
+      const response = await apiLogin({ email, password });
+      
+      // Store token
+      await AsyncStorage.setItem('authToken', response.access_token || response.token);
+      
+      // Store user data if available
+      if (response.user) {
+        await AsyncStorage.setItem('userData', JSON.stringify(response.user));
+        setUser(response.user);
+        console.log('User data stored during login:', { id: response.user._id });
+      } else {
+        console.warn('No user data received from login API');
+      }
       
       setIsAuthenticated(true);
-      setUser(user);  // Set the user in state
       onAuthChange(true);
     } catch (err: any) {
-      setError(err.message || 'Login failed');
-      throw err;
+      console.error('Login error:', err);
+      setError(err?.message || 'Failed to login');
+      setIsAuthenticated(false);
     } finally {
       setLoading(false);
     }
   };
 
   const signup = async (userData: any) => {
-    setLoading(true);
-    setError(null);
     try {
-      const { token, user } = await apiSignup(userData);
-      await AsyncStorage.setItem('token', token);
-      await AsyncStorage.setItem('user', JSON.stringify(user));
+      setLoading(true);
+      setError(null);
       
-      setIsAuthenticated(true);
-      setUser(user);  // Set the user in state
-      onAuthChange(true);
+      // Call signup API
+      const response = await apiSignup(userData);
+      
+      if (response.success && !response.requiresLogin) {
+        // If signup automatically logs in the user
+        await AsyncStorage.setItem('authToken', response.access_token || response.token);
+        
+        // Store user data if available
+        if (response.user) {
+          await AsyncStorage.setItem('userData', JSON.stringify(response.user));
+          setUser(response.user);
+          console.log('User data stored during signup:', { id: response.user._id });
+        }
+        
+        setIsAuthenticated(true);
+        onAuthChange(true);
+      }
     } catch (err: any) {
-      setError(err.message || 'Signup failed');
-      throw err;
+      console.error('Signup error:', err);
+      setError(err?.message || 'Failed to sign up');
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    setLoading(true);
     try {
-      // If there's an apiLogout function, call it
-      // await apiLogout();
+      setLoading(true);
       
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
+      // Call logout API if needed
+      await apiLogout();
       
-      setIsAuthenticated(false);
-      setUser(null);  // Clear the user
-      onAuthChange(false);
-    } catch (err: any) {
-      console.error('Logout error:', err);
-      // Still clear local auth state even if API call fails
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
+      // Clear stored data
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('userData');
       
       setIsAuthenticated(false);
       setUser(null);
       onAuthChange(false);
+    } catch (err: any) {
+      console.error('Logout error:', err);
+      setError(err?.message || 'Failed to logout');
     } finally {
       setLoading(false);
     }
@@ -135,18 +165,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
   const clearError = () => {
     setError(null);
   };
+  const refreshUserData = async () => {
+  if (!user || !user._id) return;
+  
+  try {
+    setLoading(true);
+    const userData = await fetchCurrentUser();
+    if (userData) {
+      setUser(userData);
+      console.log('User data refreshed successfully');
+    }
+  } catch (error) {
+    console.error("Failed to refresh user data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // Log the current auth state
+  console.log('useAuth returning:', { hasUser: !!user, userId: user?._id });
 
   return (
     <AuthContext.Provider
       value={{
         isAuthenticated,
-        user,  // Include user in the context value
+        user,
         loading,
         error,
         login,
         signup,
         logout,
         clearError,
+        refreshUserData
       }}
     >
       {children}

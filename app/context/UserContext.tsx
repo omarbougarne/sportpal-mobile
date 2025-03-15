@@ -1,5 +1,5 @@
 // UserContext.tsx
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import { fetchCurrentUser } from '@/app/services/api/userApi';
 import { User } from '@/app/types/user';
 
@@ -10,6 +10,15 @@ interface UserContextType {
 }
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
+
+// Create a custom hook to use the user context
+export function useUser(): UserContextType {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error("useUser must be used within a UserProvider");
+  }
+  return context;
+}
 
 interface UserProviderProps {
   children: ReactNode;

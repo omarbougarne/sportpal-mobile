@@ -14,9 +14,6 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: 1.23.1
         version: 1.23.1(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))
-      '@react-native-picker/picker':
-        specifier: 2.9.0
-        version: 2.9.0(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
       '@react-navigation/bottom-tabs':
         specifier: ^7.2.0
         version: 7.2.0(@react-navigation/native@7.0.14(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native-safe-area-context@4.12.0(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native-screens@4.4.0(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)
@@ -68,6 +65,9 @@ importers:
       expo-web-browser:
         specifier: ~14.0.2
         version: 14.0.2(expo@52.0.36(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@expo/metro-runtime@4.0.1(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1)))(react-native-webview@13.12.5(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1))(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))
+      jwt-decode:
+        specifier: ^4.0.0
+        version: 4.0.0
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -1081,12 +1081,6 @@ packages:
     resolution: {integrity: sha512-Qd2kQ3yi6Y3+AcUlrHxSLlnBvpdCEMVGFlVBneVOjaFaPU61g1huc38g339ysXspwY1QZA2aNhrk/KlHGO+ewA==}
     peerDependencies:
       react-native: ^0.0.0-0 || >=0.60 <1.0
-
-  '@react-native-picker/picker@2.9.0':
-    resolution: {integrity: sha512-khEhIW/uhfMqq/+tvg4rEAiPGT8GX+Y6QydlP2TSMSmRHoSJK+ShXvXZXSr4Sii4imkj4BwvLunGywwtQDODqg==}
-    peerDependencies:
-      react: '*'
-      react-native: '*'
 
   '@react-native/assets-registry@0.76.7':
     resolution: {integrity: sha512-o79whsqL5fbPTUQO9w1FptRd4cw1TaeOrXtQSLQeDrMVAenw/wmsjyPK10VKtvqxa1KNMtWEyfgxcM8CVZVFmg==}
@@ -3039,6 +3033,10 @@ packages:
 
   jsonfile@6.1.0:
     resolution: {integrity: sha512-5dgndWOriYSm5cnYaJNhalLNDKOqFwyDB/rr1E9ZsGciGvKPs8R2xYGCacuf3z6K1YKDz182fd+fY3cn3pMqXQ==}
+
+  jwt-decode@4.0.0:
+    resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
+    engines: {node: '>=18'}
 
   kind-of@6.0.3:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
@@ -6115,11 +6113,6 @@ snapshots:
       merge-options: 3.0.4
       react-native: 0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1)
 
-  '@react-native-picker/picker@2.9.0(react-native@0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1))(react@18.3.1)':
-    dependencies:
-      react: 18.3.1
-      react-native: 0.76.7(@babel/core@7.26.9)(@babel/preset-env@7.26.9(@babel/core@7.26.9))(@types/react@18.3.18)(react@18.3.1)
-
   '@react-native/assets-registry@0.76.7': {}
 
   '@react-native/babel-plugin-codegen@0.76.7(@babel/preset-env@7.26.9(@babel/core@7.26.9))':
@@ -8550,6 +8543,8 @@ snapshots:
       universalify: 2.0.1
     optionalDependencies:
       graceful-fs: 4.2.11
+
+  jwt-decode@4.0.0: {}
 
   kind-of@6.0.3: {}
 
