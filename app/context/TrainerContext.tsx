@@ -1,16 +1,20 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { getTrainerByUserId, createTrainer, updateTrainer, deleteTrainer, addReview, addWorkout } from '@/app/services/api/trainerApi';
+import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { Trainer } from '@/app/types/trainer';
+import { Contract, ContractStatus } from '@/app/types/contract';
+import { getTrainerByUserId } from '@/app/services/api/trainerApi';
+import { getTrainerContracts, updateContractStatus } from '@/app/services/api/contractApi';
+import { AuthContext } from './AuthContext';
 
 interface TrainerContextType {
-  trainer: Trainer | null;
+  trainerProfile: Trainer | null;
+  contracts: Contract[];
   loading: boolean;
   error: string | null;
-  createTrainer: (createTrainerDto: any) => Promise<void>;
-  updateTrainer: (id: string, updateTrainerDto: any) => Promise<void>;
-  deleteTrainer: (id: string) => Promise<void>;
-  addReview: (id: string, reviewDto: any) => Promise<void>;
-  addWorkout: (id: string, workoutId: string) => Promise<void>;
+  loadTrainerProfile: () => Promise<void>;
+  loadTrainerContracts: () => Promise<void>;
+  updateContract: (contractId: string, status: ContractStatus) => Promise<void>;
+  hasActiveContracts: boolean;
+  pendingContractsCount: number;
 }
 
 interface TrainerProviderProps {
@@ -18,115 +22,110 @@ interface TrainerProviderProps {
 }
 
 const defaultContext: TrainerContextType = {
-  trainer: null,
+  trainerProfile: null,
+  contracts: [],
   loading: false,
   error: null,
-  createTrainer: async () => {},
-  updateTrainer: async () => {},
-  deleteTrainer: async () => {},
-  addReview: async () => {},
-  addWorkout: async () => {},
+  loadTrainerProfile: async () => {},
+  loadTrainerContracts: async () => {},
+  updateContract: async () => {},
+  hasActiveContracts: false,
+  pendingContractsCount: 0
 };
 
 export const TrainerContext = createContext<TrainerContextType>(defaultContext);
 
 export const TrainerProvider: React.FC<TrainerProviderProps> = ({ children }) => {
-  const [trainer, setTrainer] = useState<Trainer | null>(null);
+  const { user, isAuthenticated, isTrainer } = useContext(AuthContext);
+  const [trainerProfile, setTrainerProfile] = useState<Trainer | null>(null);
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTrainer = async (userId: string) => {
+  useEffect(() => {
+    if (isAuthenticated && isTrainer) {
+      loadTrainerProfile();
+      loadTrainerContracts();
+    }
+  }, [isAuthenticated, isTrainer]);
+
+  const loadTrainerProfile = async () => {
+    if (!user?._id) return;
+    
     try {
       setLoading(true);
-      const trainerData = await getTrainerByUserId(userId);
-      setTrainer(trainerData);
-    } catch (err) {
-      console.error('Error fetching trainer:', err);
-      setError('Failed to fetch trainer');
+      setError(null);
+      const trainer = await getTrainerByUserId(user._id);
+      setTrainerProfile(trainer);
+    } catch (err: any) {
+      console.error('Failed to load trainer profile:', err);
+      setError(err?.message || 'Failed to load trainer profile');
     } finally {
       setLoading(false);
     }
   };
 
-  const createTrainerHandler = async (createTrainerDto: any) => {
+  const loadTrainerContracts = async () => {
+    if (!user?._id || !isTrainer) return;
+    
     try {
       setLoading(true);
-      const newTrainer = await createTrainer(createTrainerDto);
-      setTrainer(newTrainer);
-    } catch (err) {
-      console.error('Error creating trainer:', err);
-      setError('Failed to create trainer');
+      setError(null);
+      const trainerContracts = await getTrainerContracts();
+      setContracts(trainerContracts);
+    } catch (err: any) {
+      console.error('Failed to load trainer contracts:', err);
+      setError(err?.message || 'Failed to load trainer contracts');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateTrainerHandler = async (id: string, updateTrainerDto: any) => {
+  const updateContract = async (contractId: string, status: ContractStatus) => {
     try {
       setLoading(true);
-      const updatedTrainer = await updateTrainer(id, updateTrainerDto);
-      setTrainer(updatedTrainer);
-    } catch (err) {
-      console.error('Error updating trainer:', err);
-      setError('Failed to update trainer');
+      setError(null);
+      
+      await updateContractStatus(contractId, { status });
+      
+      // Refresh contracts after update
+      await loadTrainerContracts();
+    } catch (err: any) {
+      console.error('Failed to update contract status:', err);
+      setError(err?.message || 'Failed to update contract status');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteTrainerHandler = async (id: string) => {
-    try {
-      setLoading(true);
-      await deleteTrainer(id);
-      setTrainer(null);
-    } catch (err) {
-      console.error('Error deleting trainer:', err);
-      setError('Failed to delete trainer');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addReviewHandler = async (id: string, reviewDto: any) => {
-    try {
-      setLoading(true);
-      const updatedTrainer = await addReview(id, reviewDto);
-      setTrainer(updatedTrainer);
-    } catch (err) {
-      console.error('Error adding review:', err);
-      setError('Failed to add review');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addWorkoutHandler = async (id: string, workoutId: string) => {
-    try {
-      setLoading(true);
-      const updatedTrainer = await addWorkout(id, workoutId);
-      setTrainer(updatedTrainer);
-    } catch (err) {
-      console.error('Error adding workout:', err);
-      setError('Failed to add workout');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Derived properties
+  const hasActiveContracts = contracts.some(
+    contract => contract.status === ContractStatus.ACCEPTED
+  );
+  
+  const pendingContractsCount = contracts.filter(
+    contract => contract.status === ContractStatus.PENDING
+  ).length;
 
   return (
     <TrainerContext.Provider
       value={{
-        trainer,
+        trainerProfile,
+        contracts,
         loading,
         error,
-        createTrainer: createTrainerHandler,
-        updateTrainer: updateTrainerHandler,
-        deleteTrainer: deleteTrainerHandler,
-        addReview: addReviewHandler,
-        addWorkout: addWorkoutHandler,
+        loadTrainerProfile,
+        loadTrainerContracts,
+        updateContract,
+        hasActiveContracts,
+        pendingContractsCount
       }}
     >
       {children}
     </TrainerContext.Provider>
   );
 };
+
+// Custom hook
+export const useTrainer = () => useContext(TrainerContext);

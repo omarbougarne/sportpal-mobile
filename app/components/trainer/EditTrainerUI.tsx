@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SpecializationType, CertificationType } from '@/app/types/trainer';
 
 interface EditTrainerUIProps {
+  name: string;  // Add this new prop
   bio: string;
   yearsOfExperience: string;
   hourlyRate: string;
@@ -28,6 +29,7 @@ interface EditTrainerUIProps {
   error: string | null;
   isAuthorized: boolean;
   
+  onNameChange: (text: string) => void;  // Add this handler
   onBioChange: (text: string) => void;
   onYearsOfExperienceChange: (text: string) => void;
   onHourlyRateChange: (text: string) => void;
@@ -46,6 +48,7 @@ interface EditTrainerUIProps {
 }
 
 export default function EditTrainerUI({
+  name,  // Add this
   bio,
   yearsOfExperience,
   hourlyRate,
@@ -61,6 +64,7 @@ export default function EditTrainerUI({
   saving,
   error,
   isAuthorized,
+  onNameChange,  // Add this
   onBioChange,
   onYearsOfExperienceChange,
   onHourlyRateChange,
@@ -137,6 +141,17 @@ export default function EditTrainerUI({
             <Text style={styles.errorMessage}>{error}</Text>
           </View>
         )}
+        
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Name*</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={onNameChange}
+            placeholder="Your name as a trainer"
+            placeholderTextColor="#999"
+          />
+        </View>
         
         <View style={styles.formGroup}>
           <Text style={styles.label}>Bio*</Text>

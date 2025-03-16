@@ -103,11 +103,11 @@ export default function TrainerIndex() {
           
           {/* Add option to browse trainers even if user isn't a trainer yet */}
           <TouchableOpacity 
-            style={styles.secondaryButton}
-            onPress={() => setShowTrainersList(true)}
-          >
-            <Text style={styles.secondaryButtonText}>Browse Trainers</Text>
-          </TouchableOpacity>
+  style={styles.secondaryButton}
+  onPress={() => router.push('/booking/new')}
+>
+  <Text style={styles.secondaryButtonText}>Browse Trainers</Text>
+</TouchableOpacity>
         </View>
       </ImageBackground>
     );

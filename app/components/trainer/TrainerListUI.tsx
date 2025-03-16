@@ -2,6 +2,7 @@ import React from 'react';
 import { View, FlatList, ActivityIndicator, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Trainer } from '@/app/types/trainer';
 import TrainerCardUI from './TrainerCardUI';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 interface TrainersListUIProps {
   trainers: Trainer[];
@@ -45,6 +46,9 @@ export default function TrainersListUI({
     );
   }
   
+  // Ensure trainers is an array
+  const safeTrainers = Array.isArray(trainers) ? trainers : [];
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -55,21 +59,22 @@ export default function TrainersListUI({
         clearButtonMode="while-editing"
       />
       
-      {trainers.length > 0 ? (
+      {safeTrainers.length > 0 ? (
         <FlatList
-          data={trainers}
-          keyExtractor={(item) => item._id || Math.random().toString()}
-          renderItem={({ item }) => (
-            <TrainerCardUI
-              trainer={item}
-              onViewProfile={() => onViewProfile(item._id!)}
-              onHire={() => onHireTrainer(item._id!)}
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-        />
+  data={safeTrainers}
+  keyExtractor={(item) => item._id || Math.random().toString()}
+  renderItem={({ item }) => (
+    <TrainerCardUI
+      trainer={item}
+      onViewProfile={() => onViewProfile(item._id!)}
+      onHire={() => onHireTrainer(item._id!)}  // Make sure this line exists
+    />
+  )}
+  contentContainerStyle={styles.listContent}
+/>
       ) : (
         <View style={styles.centerContainer}>
+          <Ionicons name="fitness-outline" size={60} color="#ccc" />
           <Text style={styles.noResultsText}>
             {searchQuery ? "No trainers match your search" : "No trainers available"}
           </Text>

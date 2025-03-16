@@ -25,10 +25,36 @@ export const createTrainer = async (createTrainerDto: any) => {
     }
 };
 
-export const getTrainers = async (query: any) => {
+export const getTrainers = async (params: any) => {
     try {
-        const response = await apiClient.get('/trainers', { params: query });
-        return response.data;
+        const response = await apiClient.get('/trainers', { params });
+
+        // The backend returns { trainers: [...], total: number }
+        const responseData = response.data;
+
+        // Check if the response has the expected format
+        if (responseData && typeof responseData === 'object' && Array.isArray(responseData.trainers)) {
+            console.log(`Retrieved ${responseData.trainers.length} trainers of ${responseData.total} total`);
+            return responseData.trainers;
+        }
+
+        // Handle case where response isn't in the expected format
+        console.warn('Unexpected trainers response format:', responseData);
+
+        // If trainers exists but isn't an array, return empty array
+        if (responseData && responseData.trainers) {
+            console.warn('trainers property exists but is not an array');
+            return [];
+        }
+
+        // If the response itself is an array (different API format), use that
+        if (Array.isArray(responseData)) {
+            console.warn('Response is directly an array, not using expected format');
+            return responseData;
+        }
+
+        // Default fallback
+        return [];
     } catch (error) {
         console.error('Error fetching trainers:', error);
         throw error;

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, signup as apiSignup, logout as apiLogout } from '@/app/services/api/authApi';
+import { login as apiLogin, signup as apiSignup, logout as apiLogout, login, logout, signup } from '@/app/services/api/authApi';
 import { fetchCurrentUser } from '@/app/services/api/userApi';
 import { User } from '@/app/types/user';
 
@@ -9,11 +9,15 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (loginData: { email: string; password: string }) => Promise<void>;
   signup: (userData: any) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
   refreshUserData: () => Promise<void>;
+  // Contract related helpers
+  isTrainer: boolean;
+  canHireTrainers: boolean;
+  canManageContracts: boolean;
 }
 
 interface AuthProviderProps {
@@ -31,6 +35,10 @@ const defaultContext: AuthContextType = {
   logout: async () => {},
   clearError: () => {},
   refreshUserData: async () => {},
+  // Default contract capabilities
+  isTrainer: false,
+  canHireTrainers: false,
+  canManageContracts: false,
 };
 
 export const AuthContext = createContext<AuthContextType>(defaultContext);
@@ -79,111 +87,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
     checkAuth();
   }, [onAuthChange]);
 
-  const login = async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Call login API
-      const response = await apiLogin({ email, password });
-      
-      // Store token
-      await AsyncStorage.setItem('authToken', response.access_token || response.token);
-      
-      // Store user data if available
-      if (response.user) {
-        await AsyncStorage.setItem('userData', JSON.stringify(response.user));
-        setUser(response.user);
-        console.log('User data stored during login:', { id: response.user._id });
-      } else {
-        console.warn('No user data received from login API');
-      }
-      
-      setIsAuthenticated(true);
-      onAuthChange(true);
-    } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err?.message || 'Failed to login');
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const signup = async (userData: any) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Call signup API
-      const response = await apiSignup(userData);
-      
-      if (response.success && !response.requiresLogin) {
-        // If signup automatically logs in the user
-        await AsyncStorage.setItem('authToken', response.access_token || response.token);
-        
-        // Store user data if available
-        if (response.user) {
-          await AsyncStorage.setItem('userData', JSON.stringify(response.user));
-          setUser(response.user);
-          console.log('User data stored during signup:', { id: response.user._id });
-        }
-        
-        setIsAuthenticated(true);
-        onAuthChange(true);
-      }
-    } catch (err: any) {
-      console.error('Signup error:', err);
-      setError(err?.message || 'Failed to sign up');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      
-      // Call logout API if needed
-      await apiLogout();
-      
-      // Clear stored data
-      await AsyncStorage.removeItem('authToken');
-      await AsyncStorage.removeItem('userData');
-      
-      setIsAuthenticated(false);
-      setUser(null);
-      onAuthChange(false);
-    } catch (err: any) {
-      console.error('Logout error:', err);
-      setError(err?.message || 'Failed to logout');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Existing functions like login, signup, logout...
 
   const clearError = () => {
     setError(null);
   };
-  const refreshUserData = async () => {
-  if (!user || !user._id) return;
   
-  try {
-    setLoading(true);
-    const userData = await fetchCurrentUser();
-    if (userData) {
-      setUser(userData);
-      console.log('User data refreshed successfully');
+  const refreshUserData = async () => {
+    if (!user || !user._id) return;
+    
+    try {
+      setLoading(true);
+      const userData = await fetchCurrentUser();
+      if (userData) {
+        setUser(userData);
+        console.log('User data refreshed successfully');
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to refresh user data:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  // Derived properties for contract capabilities
+  const isTrainer = Boolean(user?.trainerProfile);
+  const canHireTrainers = isAuthenticated && !isTrainer;
+  const canManageContracts = isAuthenticated;
 
   // Log the current auth state
-  console.log('useAuth returning:', { hasUser: !!user, userId: user?._id });
+  console.log('useAuth returning:', { 
+    hasUser: !!user, 
+    userId: user?._id,
+    isTrainer,
+    canHireTrainers
+  });
 
   return (
     <AuthContext.Provider
@@ -196,7 +134,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
         signup,
         logout,
         clearError,
-        refreshUserData
+        refreshUserData,
+        // Contract related helpers
+        isTrainer,
+        canHireTrainers,
+        canManageContracts
       }}
     >
       {children}
