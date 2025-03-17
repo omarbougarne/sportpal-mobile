@@ -1,16 +1,16 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import GroupDetails from '@/app/components/group/GroupDetails';
+import UpdateGroupComponent from '@/app/components/group/UpdateGroup';
 
-export default function GroupDetailScreen() {
+export default function EditGroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   
   return (
     <>
-      <Stack.Screen options={{ title: "Group Details" }} />
+      <Stack.Screen options={{ title: "Edit Group" }} />
       <View style={styles.container}>
-        <GroupDetails id={id} />
+        <UpdateGroupComponent id={id} />
       </View>
     </>
   );
@@ -19,5 +19,6 @@ export default function GroupDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
   }
 });

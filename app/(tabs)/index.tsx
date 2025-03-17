@@ -92,12 +92,13 @@ export default function Index() {
                 </View>
                 
                 <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.viewButton}
-                    onPress={() => router.push(`./group/${item._id}`)}
-                  >
-                    <Text style={styles.buttonText}>View Group</Text>
-                  </TouchableOpacity>
+                  // When viewing a group from the group list
+<TouchableOpacity
+  style={styles.viewButton}
+  onPress={() => router.push(`/group/${item._id}`)}
+>
+  <Text style={styles.buttonText}>View Group</Text>
+</TouchableOpacity>
                   
                   <TouchableOpacity
                     style={[

@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { login as apiLogin, signup as apiSignup, logout as apiLogout, login, logout, signup } from '@/app/services/api/authApi';
+import { login as apiLogin, signup as apiSignup, logout as apiLogout } from '@/app/services/api/authApi';
 import { fetchCurrentUser } from '@/app/services/api/userApi';
 import { User } from '@/app/types/user';
 
@@ -86,8 +86,81 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
 
     checkAuth();
   }, [onAuthChange]);
-
-  // Existing functions like login, signup, logout...
+  
+  // Define login, signup, and logout functions INSIDE the component
+  const login = async (loginData: { email: string; password: string }): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiLogin(loginData);
+      
+      // Store the token
+      await AsyncStorage.setItem('authToken', response.access_token);
+      
+      // Set user if available in response
+      if (response.user) {
+        setUser(response.user);
+      }
+      
+      // Update authentication state
+      setIsAuthenticated(true);
+      onAuthChange(true);
+      
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err?.message || 'Failed to login');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const signup = async (userData: any): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiSignup(userData);
+      
+      // Some implementations might return a token on signup & auto-login
+      if (response.access_token) {
+        await AsyncStorage.setItem('authToken', response.access_token);
+        setIsAuthenticated(true);
+        
+        if (response.user) {
+          setUser(response.user);
+        }
+        
+        onAuthChange(true);
+      }
+    } catch (err: any) {
+      console.error('Signup error:', err);
+      setError(err?.message || 'Failed to signup');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const logout = async (): Promise<void> => {
+    try {
+      // Clear token from storage
+      await AsyncStorage.removeItem('authToken');
+      
+      // Reset auth state
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      // Call the onAuthChange callback if it exists
+      onAuthChange(false);
+      
+      // Do not return anything
+    } catch (err) {
+      console.error('Error during logout:', err);
+      // Do not return anything
+    }
+  };
 
   const clearError = () => {
     setError(null);
@@ -115,14 +188,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
   const canHireTrainers = isAuthenticated && !isTrainer;
   const canManageContracts = isAuthenticated;
 
-  // Log the current auth state
-  console.log('useAuth returning:', { 
-    hasUser: !!user, 
-    userId: user?._id,
-    isTrainer,
-    canHireTrainers
-  });
-
   return (
     <AuthContext.Provider
       value={{
@@ -130,9 +195,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
         user,
         loading,
         error,
-        login,
-        signup,
-        logout,
+        login,        // Use the function defined above
+        signup,       // Use the function defined above
+        logout,       // Use the function defined above
         clearError,
         refreshUserData,
         // Contract related helpers

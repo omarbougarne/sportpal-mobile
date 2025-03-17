@@ -1,14 +1,17 @@
-import { useContext } from 'react';
-import { AuthContext } from '@/app/context/AuthContext';
+// Add this at the end of your file, after the AuthProvider component
 
-// In your useAuth.tsx:
-export function useAuth() {
-  const context = useContext(AuthContext);
+import React from "react";
+import { AuthContext } from "../context/AuthContext";
+
+/**
+ * Custom hook to easily access the auth context from any component
+ */
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
   
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   
-  console.log('useAuth returning:', { hasUser: !!context.user });
   return context;
-}
+};

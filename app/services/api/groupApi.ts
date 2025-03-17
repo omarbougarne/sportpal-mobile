@@ -12,7 +12,17 @@ export const fetchGroups = async () => {
         throw error;
     }
 };
-
+// Leave a group
+// Update your leaveGroup function to match your controller
+export async function leaveGroup(groupId: string) {
+    try {
+        const response = await apiClient.post(`/groups/${groupId}/leave`);
+        return response.data;
+    } catch (error) {
+        console.error('Error leaving group:', error);
+        throw error;
+    }
+}
 export const joinGroupByName = async (groupName: string, userId: string) => {
     try {
         console.log(`User ${userId} attempting to join group ${groupName}`);
@@ -124,4 +134,30 @@ export const fetchUserGroups = async (userId: string) => {
 
 
 
+// Add to your existing groupApi.ts file
 
+// Get nearby groups based on coordinates
+export async function getNearbyGroups(latitude: number, longitude: number, distance: number = 5000) {
+    try {
+        const response = await apiClient.get(`/groups/nearby?lat=${latitude}&lng=${longitude}&distance=${distance}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching nearby groups:', error);
+        throw error;
+    }
+}
+
+
+// Add this function to your groupApi.ts file
+
+// Get detailed member info for a group
+export async function getGroupMembers(groupId: string) {
+    try {
+        // This uses the listGroupMembers function you already have
+        const members = await listGroupMembers(groupId);
+        return members;
+    } catch (error) {
+        console.error('Error fetching group members:', error);
+        throw error;
+    }
+}

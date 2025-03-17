@@ -7,6 +7,7 @@ import { GroupsProvider } from './context/GroupContext';
 import { WorkoutProvider } from './context/workoutContext';
 import { AuthProvider } from './context/AuthContext'; 
 import { TrainerProvider } from './context/TrainerContext';
+// import FloatingLogoutButton from './components/FloatingLogoutButton';
 
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,12 +24,13 @@ export default function RootLayout() {
                   headerShown: false,
                 }}
               >
-                <Stack.Screen name="home" options={{ title: 'Home' }} />
+                <Stack.Screen name="index" options={{ title: 'Login' }} />
                 <Stack.Screen name="profile" options={{ title: 'Profile' }} />
                 <Stack.Screen name="signup" options={{ title: 'Sign Up' }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="workout" options={{ headerShown: true }} />
               </Stack>
+              {/* <FloatingLogoutButton /> */}
               </TrainerProvider>
             </WorkoutProvider>
           </GroupsProvider>

@@ -12,15 +12,22 @@ export const getUsers = async (): Promise<User[]> => {
     }
 };
 
-export const getUserById = async (id: string): Promise<User> => {
+// Update your getUserById function to match your actual API structure
+export async function getUserById(userId: string) {
     try {
-        const response = await apiClient.get(`/users/${id}`);
+        // You may need to update this endpoint to match your actual API
+        // For example, it might be /api/users/ or /users/profile/ instead
+        const response = await apiClient.get(`/users/${userId}`);
         return response.data;
     } catch (error) {
-        console.error('Error fetching user:', error);
-        throw error;
+        console.warn(`Could not fetch user with ID ${userId}:`, error);
+        // Return a minimal user object to prevent UI errors
+        return {
+            _id: userId,
+            name: "Unknown User",
+        };
     }
-};
+}
 
 export const createUser = async (userData: CreateUserDto): Promise<User> => {
     try {
