@@ -58,11 +58,11 @@ export const getGroupById = async (groupId: string) => {
     }
 };
 
-export const createGroup = async (groupData: any, userId: string) => {
+// Update your createGroup function like this
+export const createGroup = async (groupData: any) => {
     try {
-        const response = await apiClient.post(`/groups/create/${userId}`, groupData);
-        // console.log(response);
-
+        // The userId is now extracted from JWT token on the backend
+        const response = await apiClient.post('/groups/create', groupData);
         return response.data;
     } catch (error) {
         console.error('Error creating group:', error);

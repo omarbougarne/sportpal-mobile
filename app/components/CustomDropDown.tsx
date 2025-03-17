@@ -53,11 +53,13 @@ export default function CustomDropdown({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 0,
+    zIndex: 100,
+    position: 'relative',
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#DDD',
     marginBottom: 8,
   },
   customPickerButton: {
@@ -65,47 +67,51 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#444',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(20, 20, 20, 0.8)',
   },
   pickerText: {
     fontSize: 16,
+    color: 'white',
   },
   dropdownArrow: {
     fontSize: 14,
+    color: 'white',
   },
   dropdownList: {
     position: 'absolute',
-    top: 50,
+    top: 76, // Adjusted to account for label height
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(40, 40, 40, 0.95)',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#444',
     borderRadius: 8,
     zIndex: 1000,
     elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    maxHeight: 200, // Prevent it from getting too long
   },
   dropdownItem: {
     padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#333',
   },
   selectedDropdownItem: {
-    backgroundColor: '#e8f4f8',
+    backgroundColor: 'rgba(76, 50, 171, 0.5)',
   },
   optionText: {
     fontSize: 16,
+    color: 'white',
   },
   selectedOptionText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#2196F3',
+    color: '#BB86FC', // Material Design purple for dark theme
   },
 });

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { UserContext } from '../context/UserContext';
 import { useGroups } from '../context/GroupContext';
 import UpdateGroup from '../components/group/UpdateGroup';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function Index() {
   const router = useRouter();
@@ -72,6 +73,16 @@ export default function Index() {
       <View style={styles.overlay}>
         <View style={styles.container}>
           <Text style={styles.pageTitle}>Best Groups for You</Text>
+          <TouchableOpacity 
+    style={styles.createGroupButton}
+    onPress={() => router.push('/group/create')}
+    disabled={!user || !user._id}
+  >
+    <Text style={styles.createGroupButtonText}>
+      {user && user._id ? "Create New Group" : "Login to Create Group"}
+    </Text>
+    <Ionicons name="add-circle" size={24} color="white" style={styles.createGroupIcon} />
+          </TouchableOpacity>
           <FlatList
             data={groups}
             keyExtractor={(item) => item._id}
@@ -255,4 +266,35 @@ const styles = StyleSheet.create({
     color: '#BBBBBB',
     textAlign: 'center',
   },
+  // Add these styles to your StyleSheet
+
+// Create Group Button Style
+createGroupButton: {
+  flexDirection: 'row',
+  backgroundColor: 'rgba(76, 50, 171, 0.8)', // Purple color
+  paddingVertical: 12,
+  paddingHorizontal: 20,
+  borderRadius: 10,
+  marginBottom: 20,
+  alignItems: 'center',
+  justifyContent: 'center',
+  alignSelf: 'center',
+  borderWidth: 1,
+  borderColor: 'rgba(136, 116, 204, 0.5)', // Light purple border
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+  elevation: 5,
+},
+createGroupButtonText: {
+  color: 'white',
+  fontSize: 18,
+  fontWeight: 'bold',
+  letterSpacing: 0.5,
+  marginRight: 10,
+},
+createGroupIcon: {
+  marginLeft: 5,
+},
 });

@@ -6,6 +6,7 @@ import { useAuth } from '@/app/hooks/useAuth';
 import { getGroupById, joinGroupByName, leaveGroup, listGroupMembers } from '@/app/services/api/groupApi';
 import MapView, { Marker } from 'react-native-maps';
 import { getUserById } from '@/app/services/api/userApi';
+import { getLocationById } from '@/app/services/api/LocationApi';  // Fixed lowercase 'l'
 
 interface GroupDetailsProps {
   id: string;
@@ -23,84 +24,110 @@ export default function GroupDetails({ id, onJoin, onLeave }: GroupDetailsProps)
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [organizerDetails, setOrganizerDetails] = useState<any>(null);
   const [memberDetails, setMemberDetails] = useState<any[]>([]);
+  const [locationDetails, setLocationDetails] = useState<any>(null);
   
   const { user } = useAuth();
   const router = useRouter();
   
   // Fetch group data
- // Add this to your useEffect in GroupDetails.tsx
-
-// Modify the section where you fetch user details to be more resilient:
-// Replace your member fetching code with this:
-
-useEffect(() => {
-  const fetchGroupDetails = async () => {
-    if (!id) return;
-    
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    const fetchGroupDetails = async () => {
+      if (!id) return;
       
-      // Get the group data
-      const groupData = await getGroupById(id);
-      setGroup(groupData);
-      
-      // Check if user is member or organizer
-      if (user && groupData) {
-        const userIsMember = groupData.members?.some(
-          (member: any) => member._id === user._id || member === user._id
-        );
-        const userIsOrganizer = user._id === groupData.organizer?._id || 
-                              user._id === groupData.organizer;
+      try {
+        setLoading(true);
+        setError(null);
         
-        setIsMember(userIsMember);
-        setIsOrganizer(userIsOrganizer);
+        // Get the group data
+        const groupData = await getGroupById(id);
+        setGroup(groupData);
         
-        // Instead of fetching each member separately, get them all at once
-        try {
-          const membersData = await listGroupMembers(id);
-          setMemberDetails(membersData || []);
-        } catch (err) {
-          console.warn('Could not fetch member details:', err);
-          // Fall back to the basic member info from the group object
+        // Fetch location if needed
+        if (groupData.location) {
+          if (typeof groupData.location === 'string') {
+            try {
+              const locationData = await getLocationById(groupData.location);
+              setLocationDetails(locationData);
+            } catch (err) {
+              console.warn("Could not fetch location details:", err);
+            }
+          } else if (typeof groupData.location === 'object') {
+            setLocationDetails(groupData.location);
+          }
         }
         
-        // Only try to fetch organizer details if needed
-        if (groupData.organizer && typeof groupData.organizer === 'string') {
+        // Check if user is member or organizer
+        if (user && groupData) {
+          const userIsMember = groupData.members?.some(
+            (member: any) => {
+              if (typeof member === 'string') {
+                return member === user._id;
+              }
+              return member._id === user._id || member.userId === user._id;
+            }
+          );
+          
+          const userIsOrganizer = 
+            (typeof groupData.organizer === 'string' && user._id === groupData.organizer) ||
+            (groupData.organizer?._id && user._id === groupData.organizer._id) ||
+            (groupData.organizer?.userId && user._id === groupData.organizer.userId);
+          
+          setIsMember(userIsMember);
+          setIsOrganizer(userIsOrganizer);
+          
+          // Instead of fetching each member separately, get them all at once
           try {
-            // Try to get organizer from the members list first
-            const organizerFromMembers = memberDetails.find(
-              (m: any) => m._id === groupData.organizer
-            );
-            
-            if (organizerFromMembers) {
-              setOrganizerDetails(organizerFromMembers);
-            } else {
-              // If not found in members, you might need a separate call
-              // But maybe skip this for now since your user API has issues
-              setOrganizerDetails({
-                _id: groupData.organizer,
-                name: 'Group Organizer'
-              });
+            const membersData = await listGroupMembers(id);
+            if (membersData && Array.isArray(membersData)) {
+              setMemberDetails(membersData);
             }
           } catch (err) {
-            console.warn('Could not resolve organizer details:', err);
+            console.warn('Could not fetch member details:', err);
+            // Fall back to the basic member info from the group object
           }
-        } else if (groupData.organizer) {
-          // If organizer is already an object with details
-          setOrganizerDetails(groupData.organizer);
+          
+          // Handle organizer details
+          if (groupData.organizer) {
+            if (typeof groupData.organizer === 'string') {
+              try {
+                // Try to get organizer from the members list first
+                const organizerFromMembers = memberDetails.find(
+                  (m: any) => m._id === groupData.organizer || m.userId === groupData.organizer
+                );
+                
+                if (organizerFromMembers) {
+                  setOrganizerDetails(organizerFromMembers);
+                } else {
+                  // Fallback to basic info
+                  setOrganizerDetails({
+                    _id: groupData.organizer,
+                    name: 'Group Organizer'
+                  });
+                }
+              } catch (err) {
+                console.warn('Could not resolve organizer details:', err);
+              }
+            } else {
+              // If organizer is already an object with details
+              setOrganizerDetails(groupData.organizer);
+            }
+          }
         }
+        
+        // Debug location data
+        if (groupData && groupData.location) {
+          console.log("Group location data:", JSON.stringify(groupData.location, null, 2));
+        }
+      } catch (err) {
+        console.error('Failed to fetch group details:', err);
+        setError('Could not load group details. Please try again.');
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to fetch group details:', err);
-      setError('Could not load group details. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  fetchGroupDetails();
-}, [id, user?._id]);
+    };
+    
+    fetchGroupDetails();
+  }, [id, user?._id]);
   
   // Handle joining the group
   const handleJoinGroup = async () => {
@@ -142,7 +169,7 @@ useEffect(() => {
             try {
               setLeaving(true);
               
-              // The leaveGroup function now uses the JWT token from the request
+              // The leaveGroup function uses the JWT token from the request
               // so we don't need to pass the userId
               await leaveGroup(id);
               setIsMember(false);
@@ -169,6 +196,28 @@ useEffect(() => {
   const handleEditGroup = () => {
     router.push(`/group/${id}/edit`);
   };
+  
+  // Helper function to safely get organizer initial
+  function getOrganizerInitial() {
+    if (organizerDetails && organizerDetails.name && organizerDetails.name.length > 0) {
+      return organizerDetails.name.charAt(0).toUpperCase();
+    }
+    if (group.organizer && group.organizer.name && group.organizer.name.length > 0) {
+      return group.organizer.name.charAt(0).toUpperCase();
+    }
+    return "O";
+  }
+  
+  // Helper function to safely get organizer name
+  function getOrganizerName() {
+    if (organizerDetails && organizerDetails.name) {
+      return organizerDetails.name;
+    }
+    if (group.organizer && group.organizer.name) {
+      return group.organizer.name;
+    }
+    return 'Unknown organizer';
+  }
   
   if (loading) {
     return (
@@ -224,27 +273,38 @@ useEffect(() => {
         </Text>
         
         <View style={styles.membersList}>
-          {/* Show first few members - THIS IS WHERE YOU ADD THE MEMBER LIST CODE */}
-          {(memberDetails.length > 0 ? memberDetails : group?.members?.slice(0, 5) || [])
-            .map((member: any, index: number) => (
-              <View key={member?._id || `member-${index}`} style={styles.memberItem}>
-                <View style={styles.memberAvatar}>
-                  {member && member.profileImageUrl ? (
-                    <Image 
-                      source={{ uri: member.profileImageUrl }} 
-                      style={styles.memberImage}
-                    />
-                  ) : (
-                    <Text style={styles.memberInitial}>
-                      {member && member.name ? member.name.charAt(0).toUpperCase() : "?"}
-                    </Text>
-                  )}
+          {/* Show first few members with safer rendering */}
+          {(group.members || [])
+            .slice(0, 5)
+            .map((member: any, index: number) => {
+              // Check if member is just an ID string or a full object
+              const isIdOnly = typeof member === 'string';
+              
+              // Extract info safely
+              const memberId = isIdOnly ? member : (member?._id || `member-${index}`);
+              const memberName = isIdOnly ? `Member ${index + 1}` : (member?.name || 'Unknown member');
+              const memberImg = isIdOnly ? null : member?.profileImageUrl;
+              
+              return (
+                <View key={memberId} style={styles.memberItem}>
+                  <View style={styles.memberAvatar}>
+                    {memberImg ? (
+                      <Image 
+                        source={{ uri: memberImg }} 
+                        style={styles.memberImage}
+                      />
+                    ) : (
+                      <Text style={styles.memberInitial}>
+                        {!isIdOnly && memberName ? memberName.charAt(0).toUpperCase() : "?"}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={styles.memberName} numberOfLines={1}>
+                    {memberName}
+                  </Text>
                 </View>
-                <Text style={styles.memberName} numberOfLines={1}>
-                  {member && member.name ? member.name : 'Unknown member'}
-                </Text>
-              </View>
-            ))}
+              );
+            })}
           
           {/* Show more members indicator if needed */}
           {(group.members?.length > 5) && (
@@ -271,21 +331,13 @@ useEffect(() => {
                 />
               ) : (
                 <Text style={styles.organizerInitial}>
-                  {organizerDetails && organizerDetails.name 
-                    ? organizerDetails.name.charAt(0).toUpperCase() 
-                    : group.organizer && group.organizer.name 
-                      ? group.organizer.name.charAt(0).toUpperCase() 
-                      : "O"}
+                  {getOrganizerInitial()}
                 </Text>
               )}
             </View>
             <View>
               <Text style={styles.organizerName}>
-                {organizerDetails && organizerDetails.name 
-                  ? organizerDetails.name 
-                  : group.organizer && group.organizer.name 
-                    ? group.organizer.name 
-                    : 'Unknown organizer'}
+                {getOrganizerName()}
               </Text>
               {organizerDetails && organizerDetails.email && (
                 <Text style={styles.organizerEmail}>{organizerDetails.email}</Text>
@@ -295,64 +347,70 @@ useEffect(() => {
         </View>
       )}
       
-      {/* Location info */}
-      {/* Location info */}
-{group.location && (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>Location</Text>
-    
-    {/* Display location name if available */}
-    {group.location.name && (
-      <Text style={styles.locationName}>{group.location.name}</Text>
-    )}
-    
-    {/* Make sure coordinates exist and are in the right format */}
-    {group.location.coordinates && 
-     Array.isArray(group.location.coordinates) && 
-     group.location.coordinates.length >= 2 && (
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={{
-            latitude: parseFloat(group.location.coordinates[1]) || 0,
-            longitude: parseFloat(group.location.coordinates[0]) || 0,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-          scrollEnabled={false}
-          zoomEnabled={false}
-          rotateEnabled={false}
-        >
-          <Marker
-            coordinate={{
-              latitude: parseFloat(group.location.coordinates[1]) || 0,
-              longitude: parseFloat(group.location.coordinates[0]) || 0,
-            }}
-            title={group.name || "Group Location"}
-          />
-        </MapView>
-      </View>
-    )}
-    
-    {/* Display formatted address if available */}
-    {(group.location.address || group.location.city || group.location.country) && (
-      <Text style={styles.address}>
-        {group.location.address ? `${group.location.address}, ` : ''}
-        {group.location.city ? `${group.location.city}, ` : ''}
-        {group.location.country || ''}
-      </Text>
-    )}
-    
-    {/* If no specific location details available, show generic message */}
-    {!group.location.name && 
-     !group.location.address && 
-     !group.location.city && 
-     !group.location.country && 
-     (!group.location.coordinates || !Array.isArray(group.location.coordinates)) && (
-      <Text style={styles.locationMissing}>No detailed location information available</Text>
-    )}
-  </View>
-)}
+      {/* Location info - fixed to handle string ID or object */}
+      {locationDetails ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Location</Text>
+          
+          {locationDetails.name && (
+            <Text style={styles.locationName}>{locationDetails.name}</Text>
+          )}
+          
+          {locationDetails.coordinates && 
+           Array.isArray(locationDetails.coordinates) && 
+           locationDetails.coordinates.length >= 2 && (
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: parseFloat(locationDetails.coordinates[1]) || 0,
+                  longitude: parseFloat(locationDetails.coordinates[0]) || 0,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                rotateEnabled={false}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: parseFloat(locationDetails.coordinates[1]) || 0,
+                    longitude: parseFloat(locationDetails.coordinates[0]) || 0,
+                  }}
+                  title={group.name || "Group Location"}
+                />
+              </MapView>
+            </View>
+          )}
+          
+          {(locationDetails.address || locationDetails.city || locationDetails.country) && (
+            <Text style={styles.address}>
+              {locationDetails.address ? `${locationDetails.address}, ` : ''}
+              {locationDetails.city ? `${locationDetails.city}, ` : ''}
+              {locationDetails.country || ''}
+            </Text>
+          )}
+          
+          {!locationDetails.name && 
+           !locationDetails.address && 
+           !locationDetails.city && 
+           !locationDetails.country && 
+           (!locationDetails.coordinates || !Array.isArray(locationDetails.coordinates)) && (
+            <Text style={styles.locationMissing}>No detailed location information available</Text>
+          )}
+        </View>
+      ) : group.location && typeof group.location === 'string' ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Location</Text>
+          <ActivityIndicator size="small" color="#2196F3" style={{marginVertical: 10}} />
+          <Text style={styles.locationMissing}>Loading location details...</Text>
+        </View>
+      ) : group.location && typeof group.location === 'object' ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Location</Text>
+          <Text style={styles.locationMissing}>Basic location information available</Text>
+        </View>
+      ) : null}
       
       {/* Action buttons */}
       <View style={styles.actionContainer}>
@@ -549,6 +607,13 @@ const styles = StyleSheet.create({
   address: {
     fontSize: 14,
     color: '#666',
+  },
+  locationMissing: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    color: '#888',
+    textAlign: 'center',
+    marginVertical: 10,
   },
   actionContainer: {
     padding: 16,
