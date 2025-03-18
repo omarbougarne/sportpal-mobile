@@ -15,7 +15,7 @@ export default function CreateGroupScreen() {
         'Authentication Required',
         'You need to be logged in to create a group.',
         [
-          { text: 'OK', onPress: () => router.push('/login') }
+          { text: 'OK', onPress: () => router.push('/') }
         ]
       );
     }

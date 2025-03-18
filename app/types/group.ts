@@ -3,6 +3,6 @@ export interface Group {
     name: string;
     sport: string;
     activity: string;
-    location: string;
+    location: { city: string };
     members: []
 }

@@ -16,6 +16,8 @@ export default function Index() {
     refreshUser();
   }, []);
 
+
+
   const handleJoinGroup = async (groupName: string) => {
     if (!user || !user._id) {
       Alert.alert(
@@ -65,6 +67,7 @@ export default function Index() {
     </ImageBackground>
   );
 
+  if(Array.isArray(groups))
   return (
     <ImageBackground 
       source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
@@ -84,7 +87,7 @@ export default function Index() {
     <Ionicons name="add-circle" size={24} color="white" style={styles.createGroupIcon} />
           </TouchableOpacity>
           <FlatList
-            data={groups}
+            data={groups || []}
             keyExtractor={(item) => item._id}
             renderItem={({ item }) => (
               <View style={styles.groupItem}>
@@ -99,11 +102,10 @@ export default function Index() {
                 </View>
                 <View style={styles.detailsContainer}>
                   <Text style={styles.detailLabel}>Location:</Text>
-                  <Text style={styles.detailValue}>{item.location}</Text>
+                  <Text style={styles.detailValue}>{item?.location.city || 'unknown'}</Text>
                 </View>
                 
                 <View style={styles.buttonContainer}>
-                  // When viewing a group from the group list
 <TouchableOpacity
   style={styles.viewButton}
   onPress={() => router.push(`/group/${item._id}`)}
