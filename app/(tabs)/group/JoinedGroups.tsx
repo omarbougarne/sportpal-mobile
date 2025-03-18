@@ -62,9 +62,7 @@ export default function JoinedGroups({ onRefresh }: JoinedGroupsProps) {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.title}>My Groups</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
+        
       </View>
       
       {joinedGroups.length === 0 ? (

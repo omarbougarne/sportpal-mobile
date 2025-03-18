@@ -250,11 +250,7 @@ export default function GroupDetails({ id, onJoin, onLeave }: GroupDetailsProps)
           {group.activity && <Text style={styles.groupActivity}>{group.activity}</Text>}
         </View>
         
-        {isOrganizer && (
-          <TouchableOpacity style={styles.editButton} onPress={handleEditGroup}>
-            <Ionicons name="create-outline" size={24} color="#2196F3" />
-          </TouchableOpacity>
-        )}
+       
       </View>
       
       {/* Description */}
@@ -447,15 +443,17 @@ export default function GroupDetails({ id, onJoin, onLeave }: GroupDetailsProps)
         ) : null}
         
         {/* If user is organizer, show manage group option */}
-        {isOrganizer && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.manageButton]}
-            onPress={() => router.push(`/group/${id}/manage`)}
-          >
-            <Ionicons name="settings-outline" size={20} color="white" style={styles.buttonIcon} />
-            <Text style={styles.actionButtonText}>Manage Group</Text>
-          </TouchableOpacity>
-        )}
+        // In your existing GroupDetails.tsx file, make sure the button works:
+
+{isOrganizer && (
+  <TouchableOpacity
+    style={[styles.actionButton, styles.manageButton]}
+    onPress={() => router.push(`/group/${id}/manage`)}
+  >
+    <Ionicons name="settings-outline" size={20} color="white" style={styles.buttonIcon} />
+    <Text style={styles.actionButtonText}>Manage Group</Text>
+  </TouchableOpacity>
+)}
       </View>
     </ScrollView>
   );

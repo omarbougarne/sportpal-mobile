@@ -1,24 +1,18 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
-import UpdateGroupComponent from '@/app/components/group/UpdateGroup';
+import { SafeAreaView } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import ManageGroup from '@/app/components/group/ManageGroup';
 
-export default function EditGroupScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function ManageGroupScreen() {
+  const { id } = useLocalSearchParams();
+  
+  if (!id || typeof id !== 'string') {
+    return null; // Or handle the error appropriately
+  }
   
   return (
-    <>
-      <Stack.Screen options={{ title: "Edit Group" }} />
-      <View style={styles.container}>
-        <UpdateGroupComponent id={id} />
-      </View>
-    </>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ManageGroup id={id} />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  }
-});
