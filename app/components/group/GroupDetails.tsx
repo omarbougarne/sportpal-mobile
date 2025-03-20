@@ -149,7 +149,7 @@ export default function GroupDetails({ id, onJoin, onLeave }: GroupDetailsProps)
       Alert.alert('Success', 'You have joined the group!');
     } catch (err) {
       console.error('Error joining group:', err);
-      Alert.alert('Error', 'Failed to join the group. Please try again.');
+      Alert.alert('Error', 'Your Already a member.');
     } finally {
       setJoining(false);
     }

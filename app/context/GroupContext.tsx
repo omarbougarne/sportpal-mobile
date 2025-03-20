@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { fetchGroups, createGroup, updateGroup, deleteGroup, joinGroupByName, getGroupById, fetchUserGroups } from '@/app/services/api/groupApi';
 import { Group } from '@/app/types/group';
 import { getUserById } from '../services/api/userApi';
+import { getUserGroups } from '../services/api/groupApi';
 import { UserContext } from './UserContext';
 
 interface GroupsContextProps {
@@ -26,7 +27,8 @@ export const GroupsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { user } = useContext(UserContext)!; 
+  const { user } = useContext(UserContext)!;
+  const [joinedGroups, setJoinedGroups] = useState<Group[]>([]);
 
   // Fetch groups initially
   useEffect(() => {
@@ -54,7 +56,19 @@ export const GroupsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 };
 
-
+const fetchJoinedGroups = async () => {
+  try {
+    setLoading(true);
+    const userGroups = await getUserGroups();
+    setJoinedGroups(userGroups);
+    setError(null);
+  } catch (err) {
+    console.error('Error loading joined groups:', err);
+    setError('Failed to load your groups');
+  } finally {
+    setLoading(false);
+  }
+};
   const editGroup = async (groupId: string, groupData: Partial<Group>) => {
     try {
       const updatedGroup = await updateGroup(groupId, groupData);

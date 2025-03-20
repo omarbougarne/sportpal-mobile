@@ -7,7 +7,7 @@ interface TrainerDetailUIProps {
   trainer: Trainer;
   loading: boolean;
   error: string | null;
-  onHire: () => void;
+  onHire: (trainerId: string) => void;
   onRetry: () => void;
 }
 

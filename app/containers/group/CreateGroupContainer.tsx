@@ -16,6 +16,7 @@ export interface LocationType {
 
 export default function CreateGroupContainer() {
   // Form state
+  console.log('Auth state:', user ? 'Logged in as ' + user.email : 'Not logged in');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [sport, setSport] = useState('');

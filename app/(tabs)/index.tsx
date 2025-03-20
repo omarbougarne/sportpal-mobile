@@ -37,7 +37,7 @@ export default function Index() {
       refreshUser();
     } catch (err) {
       console.error('Error joining group:', err);
-      Alert.alert("Error", "Failed to join group. Please try again later.");
+      Alert.alert("Hello", "You are Already a Member");
     }
   };
 

@@ -79,6 +79,71 @@ export const updateGroup = async (groupId: string, groupData: any) => {
         throw error;
     }
 };
+export const getUserGroups = async () => {
+    try {
+        // Get user data from AsyncStorage
+        const userData = await AsyncStorage.getItem('userData');
+        console.log('User data exists:', !!userData);
+
+        let userId = null;
+
+        if (userData) {
+            // Parse stored data
+            const parsedData = JSON.parse(userData);
+            console.log('Parsed user data:', parsedData);
+
+            // Check if we have a token-only format
+            if (parsedData.access_token) {
+                // Extract user ID from JWT token
+                try {
+                    // The token is in format: header.payload.signature
+                    // We need to decode the payload (second part)
+                    const tokenParts = parsedData.access_token.split('.');
+                    if (tokenParts.length >= 2) {
+                        const payload = JSON.parse(atob(tokenParts[1]));
+                        userId = payload.sub; // The user ID is in the 'sub' claim
+                        console.log('Extracted user ID from token:', userId);
+                    }
+                } catch (decodeError) {
+                    console.error('Error decoding JWT token:', decodeError);
+                }
+            } else if (parsedData._id) {
+                // Regular user object format
+                userId = parsedData._id;
+            } else if (parsedData.id) {
+                userId = parsedData.id;
+            }
+        }
+
+        // If we still don't have a user ID, try the /auth/me endpoint
+        if (!userId) {
+            try {
+                console.log('No user ID found in stored data, trying /auth/me');
+                const response = await apiClient.get('/auth/me');
+                userId = response.data._id || response.data.id || response.data.sub;
+                console.log('Got user ID from /auth/me:', userId);
+            } catch (authError) {
+                console.error('Error getting user from /auth/me:', authError);
+            }
+        }
+
+        // Final check for user ID
+        if (!userId) {
+            console.warn('No user ID available after all attempts, returning empty groups array');
+            return [];
+        }
+
+        // Use the extracted user ID
+        console.log(`Fetching groups for user ID: ${userId}`);
+        const response = await apiClient.get(`/groups/member/${userId}`);
+
+        console.log(`Fetched ${response.data.length} groups for current user`);
+        return response.data || [];
+    } catch (error) {
+        console.error('Error fetching user groups:', error);
+        return [];
+    }
+};
 
 export const deleteGroup = async (groupId: string) => {
     try {
@@ -120,17 +185,7 @@ export const addMessageToGroup = async (groupId: string, messageId: string) => {
     }
 };
 
-export const fetchUserGroups = async (userId: string) => {
-    try {
-        console.log(`Fetching groups for user ${userId}...`);
-        const response = await apiClient.get(`/groups/member/${userId}`);
-        console.log(`Fetched ${response.data.length} groups for user:`, response.data);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching user groups:', error);
-        throw error;
-    }
-};
+
 
 
 

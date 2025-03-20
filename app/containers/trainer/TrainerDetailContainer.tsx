@@ -40,19 +40,20 @@ export default function TrainerDetailContainer({ id }: TrainerDetailContainerPro
     }
   };
 
-  const handleHireTrainer = () => {
-    router.push({
-      pathname: '/booking/new',
-      params: { trainerId: id }
-    });
-  };
+ const onHireTrainer = (trainerId: string) => {
+  console.log('Navigating to hire trainer with ID:', trainerId);
+  router.push({
+    pathname: '/booking/new',
+    params: { trainerId }
+  });
+};
 
   return (
     <TrainerDetailUI
       trainer={trainer}
       loading={loading}
       error={error}
-      onHire={handleHireTrainer}
+      onHire={onHireTrainer}
       onRetry={loadTrainerData}
     />
   );
