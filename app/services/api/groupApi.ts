@@ -3,12 +3,12 @@ import apiClient from './apiClient';
 
 export const fetchGroups = async () => {
     try {
-        console.log('Fetching groups...');
+        // console.log('Fetching groups...');
         const response = await apiClient.get('/groups');
-        console.log('Fetched groups:', response.data);
+        // console.log('Fetched groups:', response.data);
         return response.data; // Assuming response.data is now the array of groups
     } catch (error) {
-        console.error('Error fetching groups:', error);
+        // console.error('Error fetching groups:', error);
         throw error;
     }
 };
@@ -19,19 +19,19 @@ export async function leaveGroup(groupId: string) {
         const response = await apiClient.post(`/groups/${groupId}/leave`);
         return response.data;
     } catch (error) {
-        console.error('Error leaving group:', error);
+        // console.error('Error leaving group:', error);
         throw error;
     }
 }
 export const joinGroupByName = async (groupName: string, userId: string) => {
     try {
-        console.log(`User ${userId} attempting to join group ${groupName}`);
+        // console.log(`User ${userId} attempting to join group ${groupName}`);
         // Use RESTful resource pattern where the resource (group) is in the path
         const response = await apiClient.post(`/groups/${encodeURIComponent(groupName)}/join`, { userId });
-        console.log('Join group response:', response.data);
+        // console.log('Join group response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error joining group by name:', error);
+        // console.error('Error joining group by name:', error);
         throw error;
     }
 };
@@ -150,20 +150,22 @@ export const deleteGroup = async (groupId: string) => {
         const response = await apiClient.delete(`/groups/${groupId}`);
         return response.data;
     } catch (error) {
-        console.error('Error deleting group:', error);
+        // console.error('Error deleting group:', error);
         throw error;
     }
 };
 
-export const removeMemberFromGroup = async (groupId: string, userId: string) => {
+export const removeMemberFromGroup = async (groupId: string, memberId: string) => {
     try {
-        const response = await apiClient.post(`/groups/${groupId}/removeMember`, { userId });
+        const response = await apiClient.delete(`/groups/${groupId}/members/${memberId}`);
         return response.data;
     } catch (error) {
-        console.error('Error removing member from group:', error);
-        throw error;
+        console.error('Error removing member:', error);
+        throw error; // Make sure to rethrow the error to handle it in the component
     }
 };
+
+
 
 export const listGroupMembers = async (groupId: string) => {
     try {
@@ -185,10 +187,6 @@ export const addMessageToGroup = async (groupId: string, messageId: string) => {
     }
 };
 
-
-
-
-
 // Add to your existing groupApi.ts file
 
 // Get nearby groups based on coordinates
@@ -201,7 +199,6 @@ export async function getNearbyGroups(latitude: number, longitude: number, dista
         throw error;
     }
 }
-
 
 // Add this function to your groupApi.ts file
 
@@ -216,3 +213,80 @@ export async function getGroupMembers(groupId: string) {
         throw error;
     }
 }
+
+// Add these new functions to your groupApi.ts file
+
+// Remove multiple members at once
+export const removeMultipleMembers = async (groupId: string, memberIds: string[]) => {
+    try {
+        const response = await apiClient.delete(`/groups/${groupId}/members`, {
+            data: { memberIds }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error removing members:', error);
+        throw error;
+    }
+};
+
+// Invite user to group
+export const inviteUserToGroup = async (groupId: string, email: string) => {
+    try {
+        const response = await apiClient.post(`/groups/${groupId}/invite`, { email });
+        return response.data;
+    } catch (error) {
+        console.error('Error inviting user to group:', error);
+        throw error;
+    }
+};
+
+// Get group member details with pagination support
+export const getGroupMembersWithDetails = async (
+    groupId: string,
+    page: number = 1,
+    limit: number = 20
+) => {
+    try {
+        const response = await apiClient.get(
+            `/groups/${groupId}/members/details`,
+            { params: { page, limit } }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching member details:', error);
+        throw error;
+    }
+};
+
+// Check if user is member of group
+export const checkGroupMembership = async (groupId: string) => {
+    try {
+        const response = await apiClient.get(`/groups/${groupId}/membership`);
+        return response.data.isMember;
+    } catch (error) {
+        console.error('Error checking group membership:', error);
+        return false;
+    }
+};
+
+// Make a user admin of the group
+export const makeGroupAdmin = async (groupId: string, userId: string) => {
+    try {
+        const response = await apiClient.post(`/groups/${groupId}/admins`, { userId });
+        return response.data;
+    } catch (error) {
+        console.error('Error making user admin:', error);
+        throw error;
+    }
+};
+
+// Remove admin privileges
+export const removeGroupAdmin = async (groupId: string, userId: string) => {
+    try {
+        const response = await apiClient.delete(`/groups/${groupId}/admins/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error removing admin privileges:', error);
+        throw error;
+    }
+};

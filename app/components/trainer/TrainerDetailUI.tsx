@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Trainer } from '@/app/types/trainer';
 
@@ -9,6 +9,12 @@ interface TrainerDetailUIProps {
   error: string | null;
   onHire: (trainerId: string) => void;
   onRetry: () => void;
+  // New props for review functionality
+  showReviewForm?: boolean;
+  userHasReviewed?: boolean;
+  onAddReview?: () => void;
+  onSubmitReview?: (review: { rating: number; comment: string }) => Promise<void>;
+  onCancelReview?: () => void;
 }
 
 export default function TrainerDetailUI({ 
@@ -16,8 +22,34 @@ export default function TrainerDetailUI({
   loading, 
   error,
   onHire,
-  onRetry
+  onRetry,
+  showReviewForm = false,
+  userHasReviewed = false,
+  onAddReview,
+  onSubmitReview,
+  onCancelReview
 }: TrainerDetailUIProps) {
+  const [rating, setRating] = React.useState(5);
+  const [comment, setComment] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+
+  // Function to handle review submission
+  const handleSubmitReview = async () => {
+    if (!onSubmitReview) return;
+    
+    try {
+      setSubmitting(true);
+      await onSubmitReview({ rating, comment });
+      // Reset form state
+      setRating(5);
+      setComment('');
+    } catch (error) {
+      console.error('Error submitting review:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -132,53 +164,127 @@ export default function TrainerDetailUI({
         )}
       </View>
       
-      {/* Reviews */}
+      {/* Reviews Section - Updated with Add Review button */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Reviews</Text>
-        {visibleReviews.length > 0 ? (
-          <>
-            {visibleReviews.map((review, index) => (
-              <View key={index} style={styles.reviewItem}>
-                <View style={styles.reviewHeader}>
-                  <Text style={styles.reviewerName}>
-                    {typeof review.userId === 'object' && review.userId?.name 
-                      ? review.userId.name 
-                      : 'Anonymous'}
-                  </Text>
-                  <View style={styles.reviewRating}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Ionicons 
-                        key={star}
-                        name={star <= review.rating ? "star" : "star-outline"} 
-                        size={16} 
-                        color="#FFD700" 
-                      />
-                    ))}
-                  </View>
-                </View>
-                <Text style={styles.reviewText}>{review.comment}</Text>
-                <Text style={styles.reviewDate}>
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </Text>
+        <View style={styles.reviewSectionHeader}>
+          <Text style={styles.sectionTitle}>Reviews</Text>
+          {onAddReview && !userHasReviewed && !showReviewForm && (
+            <TouchableOpacity onPress={onAddReview} style={styles.addReviewButton}>
+              <Text style={styles.addReviewText}>Add Review</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        {/* Review Form */}
+        {showReviewForm && (
+          <View style={styles.reviewForm}>
+            <Text style={styles.reviewFormTitle}>Write a Review</Text>
+            
+            <View style={styles.ratingInputContainer}>
+              <Text style={styles.inputLabel}>Rating:</Text>
+              <View style={styles.starsInput}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <TouchableOpacity 
+                    key={star} 
+                    onPress={() => setRating(star)}
+                    disabled={submitting}
+                  >
+                    <Ionicons
+                      name={star <= rating ? "star" : "star-outline"}
+                      size={30}
+                      color={star <= rating ? "#FFD700" : "#ccc"}
+                      style={styles.starInput}
+                    />
+                  </TouchableOpacity>
+                ))}
               </View>
-            ))}
-            {hasMoreReviews && (
-              <TouchableOpacity style={styles.moreReviewsButton}>
-                <Text style={styles.moreReviewsText}>
-                  See all {trainer.reviews?.length} reviews
+            </View>
+            
+            <Text style={styles.inputLabel}>Your Review:</Text>
+            <TextInput
+              style={styles.commentInput}
+              multiline
+              numberOfLines={4}
+              placeholder="Share your experience with this trainer..."
+              value={comment}
+              onChangeText={setComment}
+              editable={!submitting}
+            />
+            
+            <View style={styles.formButtons}>
+              <TouchableOpacity 
+                style={[styles.formButton, styles.cancelButton]} 
+                onPress={onCancelReview}
+                disabled={submitting}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[
+                  styles.formButton, 
+                  styles.submitButton,
+                  submitting && styles.disabledButton
+                ]} 
+                onPress={handleSubmitReview}
+                disabled={submitting}
+              >
+                <Text style={styles.submitButtonText}>
+                  {submitting ? 'Submitting...' : 'Submit Review'}
                 </Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        
+        {/* Existing reviews display */}
+        {!showReviewForm && (
+          <>
+            {visibleReviews.length > 0 ? (
+              <>
+                {visibleReviews.map((review, index) => (
+                  <View key={index} style={styles.reviewItem}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={styles.reviewerName}>
+                        {typeof review.userId === 'object' && review.userId?.name 
+                          ? review.userId.name 
+                          : 'Anonymous'}
+                      </Text>
+                      <View style={styles.reviewRating}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Ionicons 
+                            key={star}
+                            name={star <= review.rating ? "star" : "star-outline"} 
+                            size={16} 
+                            color="#FFD700" 
+                          />
+                        ))}
+                      </View>
+                    </View>
+                    <Text style={styles.reviewText}>{review.comment}</Text>
+                    <Text style={styles.reviewDate}>
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                ))}
+                {hasMoreReviews && (
+                  <TouchableOpacity style={styles.moreReviewsButton}>
+                    <Text style={styles.moreReviewsText}>
+                      See all {trainer.reviews?.length} reviews
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : (
+              <Text style={styles.emptyListText}>No reviews yet</Text>
             )}
           </>
-        ) : (
-          <Text style={styles.emptyListText}>No reviews yet</Text>
         )}
       </View>
       
       {/* Hire Button */}
       <TouchableOpacity 
         style={styles.hireButton}
-        onPress={onHire}
+        onPress={() => trainer._id && onHire(trainer._id)}
       >
         <Text style={styles.hireButtonText}>Book a Session</Text>
         <Ionicons name="arrow-forward" size={20} color="white" />
@@ -404,5 +510,92 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: 30,
+  },
+  // New styles for review form
+  reviewSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  addReviewButton: {
+    backgroundColor: '#e8f4fd',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#4a90e2',
+  },
+  addReviewText: {
+    color: '#4a90e2',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  reviewForm: {
+    backgroundColor: '#f8f8f8',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  reviewFormTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  ratingInputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  starsInput: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  starInput: {
+    margin: 5,
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  formButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  formButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+  submitButton: {
+    backgroundColor: '#4a90e2',
+  },
+  cancelButton: {
+    backgroundColor: '#f1f1f1',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  cancelButtonText: {
+    color: '#666',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
 });

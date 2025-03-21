@@ -35,7 +35,7 @@ export interface Certification {
 }
 
 export interface Review {
-    userId: string; // Use string instead of Types.ObjectId
+    userId: string | { _id: string; name?: string; profileImageUrl?: string }; // Use string instead of Types.ObjectId
     rating: number;
     comment?: string;
     createdAt: Date;
@@ -65,3 +65,4 @@ export interface Trainer {
     galleryImages?: string[];
     isVerified: boolean;
 }
+

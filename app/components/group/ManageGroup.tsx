@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import UpdateGroup from './UpdateGroup';
+import ManageMembers from './ManageMembers'; // Import the ManageMembers component
 
 interface ManageGroupProps {
   id: string;
@@ -83,11 +84,7 @@ export default function ManageGroup({ id }: ManageGroupProps) {
         
         {activeTab === 'members' && (
           <View style={styles.tabContent}>
-            <Text style={styles.sectionTitle}>Manage Members</Text>
-            <Text style={styles.infoText}>
-              You can add, remove, or change roles of members here.
-            </Text>
-            {/* Member management UI would go here */}
+            <ManageMembers groupId={id} />
           </View>
         )}
         

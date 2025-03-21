@@ -2,288 +2,405 @@ import React from 'react';
 import { 
   View, 
   Text, 
-  StyleSheet, 
-  FlatList,
-  TouchableOpacity, 
-  ActivityIndicator, 
-  RefreshControl,
-  ImageBackground
+  FlatList, 
+  TouchableOpacity,  
+  ActivityIndicator,
+  TextInput,
+  Modal,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Workout } from '@/app/types/workout/workout';
+import { styles } from '../styles/workoutListStyle';
+interface FilterOptions {
+  categories: string[];
+  difficulties: string[];
+  durations: string[];
+  targetMuscles: string[];
+}
+
+interface WorkoutFilters {
+  category: string;
+  difficulty: string;
+  duration: string;
+  targetMuscle: string;
+}
 
 interface WorkoutListUIProps {
-  workouts: Workout[];  // Array of workouts
+  workouts: Workout[];
   loading: boolean;
   error: string | null;
+  searchQuery: string;
+  filters: WorkoutFilters;
+  filterOptions: FilterOptions;
+  filterModalVisible: boolean;
+  onSearch: (query: string) => void;
+  onFilterChange: (filterName: keyof WorkoutFilters, value: string) => void;
+  onToggleFilter: (filterName: keyof WorkoutFilters, value: string) => void;
+  onClearFilters: () => void;
+  onToggleFilterModal: () => void;
   onWorkoutPress: (workout: Workout) => void;
   onCreatePress: () => void;
   onRefresh: () => void;
+  totalCount: number;
+  filteredCount: number;
 }
 
 export default function WorkoutListUI({
   workouts,
   loading,
   error,
+  searchQuery,
+  filters,
+  filterOptions,
+  filterModalVisible,
+  onSearch,
+  onFilterChange,
+  onToggleFilter,
+  onClearFilters,
+  onToggleFilterModal,
   onWorkoutPress,
   onCreatePress,
-  onRefresh
+  onRefresh,
+  totalCount,
+  filteredCount
 }: WorkoutListUIProps) {
-
-  const renderItem = ({ item }: { item: Workout }) => (
-    <TouchableOpacity 
-      style={styles.workoutItem} 
-      onPress={() => onWorkoutPress(item)}
-    >
-      <View style={styles.workoutContent}>
-        <Text style={styles.workoutName}>{item.name}</Text>
-        
-        {item.description && (
-          <Text style={styles.workoutDescription} numberOfLines={2}>
-            {item.description}
-          </Text>
-        )}
-        
-        <View style={styles.workoutMetadata}>
-          {item.duration && (
-            <View style={styles.metadataItem}>
-              <Ionicons name="time-outline" size={14} color="#BBBBBB" />
-              <Text style={styles.metadataText}>{item.duration} min</Text>
-            </View>
-          )}
-          
-          {item.intensity && (
-            <View style={[
-              styles.intensityBadge, 
-              { backgroundColor: getIntensityColor(item.intensity) }
-            ]}>
-              <Text style={styles.intensityText}>{item.intensity}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-      <Ionicons name="chevron-forward" size={20} color="#BBBBBB" />
-    </TouchableOpacity>
-  );
+  
+  // Check if any filters are active
+  const hasActiveFilters = Object.values(filters).some(value => value !== '');
+  
+  // Format duration label
+  const formatDuration = (durationKey: string): string => {
+    switch(durationKey) {
+      case 'short': return 'Short (≤15 min)';
+      case 'medium': return 'Medium (15-30 min)';
+      case 'long': return 'Long (>30 min)';
+      default: return durationKey;
+    }
+  };
 
   if (loading && workouts.length === 0) {
     return (
-      <ImageBackground 
-        source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
-        style={styles.backgroundImage}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#4a90e2" />
-            <Text style={styles.loadingText}>Loading workouts...</Text>
-          </View>
-        </View>
-      </ImageBackground>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#4a90e2" />
+        <Text style={styles.loadingText}>Loading workouts...</Text>
+      </View>
     );
   }
 
-  if (error && workouts.length === 0) {
+  if (error) {
     return (
-      <ImageBackground 
-        source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
-        style={styles.backgroundImage}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.centerContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ImageBackground>
+      <View style={styles.centerContainer}>
+        <Ionicons name="alert-circle" size={60} color="#ff6b6b" />
+        <Text style={styles.errorTitle}>Error</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRefresh}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
   return (
-    <ImageBackground 
-      source={{uri:'https://i.pinimg.com/736x/86/da/d0/86dad02018fc7eaeb628c94b5705fef3.jpg'}}
-      style={styles.backgroundImage}
-    >
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <FlatList
-            data={workouts}
-            renderItem={renderItem}
-            keyExtractor={(item) => item._id}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl 
-                refreshing={loading} 
-                onRefresh={onRefresh}
-                tintColor="#FFFFFF" 
-                colors={["#4a90e2"]} 
-              />
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Ionicons name="fitness-outline" size={60} color="#BBBBBB" />
-                <Text style={styles.emptyText}>No workouts found</Text>
-                <Text style={styles.emptySubtext}>
-                  Create your first workout to get started
-                </Text>
-              </View>
-            }
+    <View style={styles.container}>
+      {/* Search and Filter Header */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color="#777" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search workouts..."
+            value={searchQuery}
+            onChangeText={onSearch}
+            clearButtonMode="while-editing"
           />
-          
-          <TouchableOpacity 
-            style={styles.createButton} 
-            onPress={onCreatePress}
-          >
-            <Ionicons name="add" size={24} color="white" />
-          </TouchableOpacity>
+          {searchQuery !== '' && (
+            <TouchableOpacity onPress={() => onSearch('')}>
+              <Ionicons name="close-circle" size={20} color="#aaa" />
+            </TouchableOpacity>
+          )}
         </View>
+        
+        <TouchableOpacity 
+          style={[styles.filterButton, hasActiveFilters && styles.activeFilterButton]}
+          onPress={onToggleFilterModal}
+        >
+          <Ionicons 
+            name="options" 
+            size={22} 
+            color={hasActiveFilters ? "#fff" : "#555"} 
+          />
+        </TouchableOpacity>
       </View>
-    </ImageBackground>
+      
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <View style={styles.activeFiltersContainer}>
+          <Text style={styles.activeFiltersTitle}>Active Filters:</Text>
+          <View style={styles.filterChipsContainer}>
+            {filters.category && (
+              <View style={styles.filterChip}>
+                <Text style={styles.filterChipText}>Category: {filters.category}</Text>
+                <TouchableOpacity 
+                  onPress={() => onFilterChange('category', '')}
+                  style={styles.filterChipRemove}
+                >
+                  <Ionicons name="close-circle" size={18} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {filters.difficulty && (
+              <View style={styles.filterChip}>
+                <Text style={styles.filterChipText}>Difficulty: {filters.difficulty}</Text>
+                <TouchableOpacity 
+                  onPress={() => onFilterChange('difficulty', '')}
+                  style={styles.filterChipRemove}
+                >
+                  <Ionicons name="close-circle" size={18} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {filters.duration && (
+              <View style={styles.filterChip}>
+                <Text style={styles.filterChipText}>Duration: {formatDuration(filters.duration)}</Text>
+                <TouchableOpacity 
+                  onPress={() => onFilterChange('duration', '')}
+                  style={styles.filterChipRemove}
+                >
+                  <Ionicons name="close-circle" size={18} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {filters.targetMuscle && (
+              <View style={styles.filterChip}>
+                <Text style={styles.filterChipText}>Target: {filters.targetMuscle}</Text>
+                <TouchableOpacity 
+                  onPress={() => onFilterChange('targetMuscle', '')}
+                  style={styles.filterChipRemove}
+                >
+                  <Ionicons name="close-circle" size={18} color="#666" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            <TouchableOpacity 
+              onPress={onClearFilters}
+              style={styles.clearAllButton}
+            >
+              <Text style={styles.clearAllText}>Clear All</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      
+      {/* Results Count */}
+      <View style={styles.resultsContainer}>
+        <Text style={styles.resultsText}>
+          {filteredCount === totalCount
+            ? `${filteredCount} workouts available`
+            : `${filteredCount} of ${totalCount} workouts`}
+        </Text>
+      </View>
+      
+      {/* Workout List */}
+      <FlatList
+        data={workouts}
+        keyExtractor={(item) => item._id}
+        refreshing={loading}
+        onRefresh={onRefresh}
+        renderItem={({ item }) => (
+          <TouchableOpacity 
+            style={styles.workoutItem}
+            onPress={() => onWorkoutPress(item)}
+          >
+            {/* Your existing workout item UI */}
+            <Text style={styles.workoutName}>{item.name}</Text>
+            <View style={styles.workoutDetails}>
+              <View style={styles.detailItem}>
+                <Ionicons name="fitness" size={16} color="#4a90e2" />
+                <Text style={styles.detailText}>{item.category}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Ionicons name="time" size={16} color="#4a90e2" />
+                <Text style={styles.detailText}>{item.duration} min</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Ionicons name="speedometer" size={16} color="#4a90e2" />
+                <Text style={styles.detailText}>{item.difficulty}</Text>
+              </View>
+            </View>
+            {item.targetMuscles && item.targetMuscles.length > 0 && (
+              <View style={styles.targetContainer}>
+                <Text style={styles.targetLabel}>Targets: </Text>
+                <Text style={styles.targetText}>{item.targetMuscles.join(', ')}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="fitness-outline" size={60} color="#ccc" />
+            <Text style={styles.emptyText}>
+              {searchQuery || hasActiveFilters
+                ? "No workouts match your search criteria"
+                : "No workouts available yet"}
+            </Text>
+            {searchQuery || hasActiveFilters ? (
+              <TouchableOpacity 
+                style={styles.clearFiltersButton}
+                onPress={() => {
+                  onSearch('');
+                  onClearFilters();
+                }}
+              >
+                <Text style={styles.clearFiltersText}>Clear Search & Filters</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        }
+      />
+      
+      {/* Create Workout Button */}
+      <TouchableOpacity style={styles.createButton} onPress={onCreatePress}>
+        <Ionicons name="add" size={24} color="white" />
+      </TouchableOpacity>
+      
+      {/* Filter Modal */}
+      <Modal
+        visible={filterModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onToggleFilterModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Filter Workouts</Text>
+              <TouchableOpacity onPress={onToggleFilterModal}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.filterOptionsContainer}>
+              {/* Category Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Category</Text>
+                <View style={styles.filterOptions}>
+                  {filterOptions.categories.map(category => (
+                    <TouchableOpacity 
+                      key={category} 
+                      style={[
+                        styles.filterOption,
+                        filters.category === category && styles.filterOptionActive
+                      ]}
+                      onPress={() => onToggleFilter('category', category)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        filters.category === category && styles.filterOptionTextActive
+                      ]}>
+                        {category}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              
+              {/* Difficulty Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Difficulty</Text>
+                <View style={styles.filterOptions}>
+                  {filterOptions.difficulties.map(difficulty => (
+                    <TouchableOpacity 
+                      key={difficulty} 
+                      style={[
+                        styles.filterOption,
+                        filters.difficulty === difficulty && styles.filterOptionActive
+                      ]}
+                      onPress={() => onToggleFilter('difficulty', difficulty)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        filters.difficulty === difficulty && styles.filterOptionTextActive
+                      ]}>
+                        {difficulty}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              
+              {/* Duration Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Duration</Text>
+                <View style={styles.filterOptions}>
+                  {filterOptions.durations.map(duration => (
+                    <TouchableOpacity 
+                      key={duration} 
+                      style={[
+                        styles.filterOption,
+                        filters.duration === duration && styles.filterOptionActive
+                      ]}
+                      onPress={() => onToggleFilter('duration', duration)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        filters.duration === duration && styles.filterOptionTextActive
+                      ]}>
+                        {formatDuration(duration)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+              
+              {/* Target Muscle Filter */}
+              <View style={styles.filterSection}>
+                <Text style={styles.filterSectionTitle}>Target Muscle</Text>
+                <View style={styles.filterOptions}>
+                  {filterOptions.targetMuscles.map(muscle => (
+                    <TouchableOpacity 
+                      key={muscle} 
+                      style={[
+                        styles.filterOption,
+                        filters.targetMuscle === muscle && styles.filterOptionActive
+                      ]}
+                      onPress={() => onToggleFilter('targetMuscle', muscle)}
+                    >
+                      <Text style={[
+                        styles.filterOptionText,
+                        filters.targetMuscle === muscle && styles.filterOptionTextActive
+                      ]}>
+                        {muscle}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity 
+                style={styles.clearFiltersModalButton}
+                onPress={onClearFilters}
+              >
+                <Text style={styles.clearFiltersModalText}>Clear All</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.applyFiltersButton}
+                onPress={onToggleFilterModal}
+              >
+                <Text style={styles.applyFiltersText}>Apply Filters</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
-const getIntensityColor = (intensity: string) => {
-  switch (intensity.toLowerCase()) {
-    case 'easy': return 'rgba(76, 175, 80, 0.9)';  // Green
-    case 'medium': return 'rgba(255, 152, 0, 0.9)'; // Orange
-    case 'hard': return 'rgba(244, 67, 54, 0.9)';   // Red
-    default: return 'rgba(33, 150, 243, 0.9)';      // Blue
-  }
-};
-
-const styles = StyleSheet.create({
-  // Background & Container Styles
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  container: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 80, // Space for FAB
-  },
-  
-  // Workout Item Styles
-  workoutItem: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(20, 20, 20, 0.8)',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#333333',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  workoutContent: {
-    flex: 1,
-  },
-  workoutName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  workoutDescription: {
-    fontSize: 14,
-    color: '#BBBBBB',
-    marginBottom: 8,
-  },
-  workoutMetadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metadataItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  metadataText: {
-    fontSize: 12,
-    color: '#BBBBBB',
-    marginLeft: 4,
-  },
-  intensityBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  intensityText: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: '#2196f3',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 4,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginTop: 10,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#BBBBBB',
-    textAlign: 'center',
-    marginTop: 5,
-  },
-  createButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#4caf50',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-});

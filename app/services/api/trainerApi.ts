@@ -139,3 +139,24 @@ export const addWorkout = async (id: string, workoutId: string) => {
         throw error;
     }
 };
+
+// Add to your trainerApi.ts file
+export const addTrainerReview = async (trainerId: string, reviewData: { rating: number, comment: string }) => {
+    try {
+        const response = await apiClient.post(`/trainers/${trainerId}/review`, reviewData);
+        return response.data;
+    } catch (error) {
+        console.error('Error adding review:', error);
+        throw error;
+    }
+};
+
+export const getTrainerReviews = async (trainerId: string) => {
+    try {
+        const response = await apiClient.get(`/trainers/${trainerId}/reviews`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching reviews:', error);
+        throw error;
+    }
+};
