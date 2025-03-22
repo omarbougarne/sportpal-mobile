@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Workout } from '@/app/types/workout/workout';
-import { styles } from '../styles/workoutListStyle';
+import { styles } from './styles/workoutListStyle';
 interface FilterOptions {
   categories: string[];
   difficulties: string[];

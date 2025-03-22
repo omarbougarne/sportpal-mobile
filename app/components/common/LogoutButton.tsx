@@ -66,7 +66,7 @@ export default function LogoutButton({
               // Add small delay to ensure state updates before navigation
               setTimeout(() => {
                 // Use replace instead of reset for Expo Router
-                router.replace('/');
+                router.push('/Login');
                 console.log("Navigation executed to /");
               }, 300);
               

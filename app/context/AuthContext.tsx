@@ -184,10 +184,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, onAuthChan
   };
 
   // Derived properties for contract capabilities
-  const isTrainer = Boolean(user?.trainerProfile);
-  const canHireTrainers = isAuthenticated && !isTrainer;
-  const canManageContracts = isAuthenticated;
-
+const isTrainer = user?.role === 'Trainer';
+const canHireTrainers = isAuthenticated && !isTrainer;
+const canManageContracts = isAuthenticated;
+console.log('Auth derived values:', {
+  userRole: user?.role,
+  isTrainer,
+  canHireTrainers
+});
   return (
     <AuthContext.Provider
       value={{

@@ -1,9 +1,7 @@
-
 import React, { useContext, useState, useEffect } from 'react';
 import { 
   View, 
-  TextInput, 
-  StyleSheet, 
+  TextInput,  
   Text, 
   Alert, 
   ImageBackground, 
@@ -13,15 +11,26 @@ import {
   Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons'; // Add this import
 import { updateUser, deleteUser } from '@/app/services/api/userApi';
+import { getTrainerByUserId } from '@/app/services/api/trainerApi';
 import { UserContext } from '../../context/UserContext';
-
+import { AuthContext } from '../../context/AuthContext'; // Add this import
+import { styles } from '../styles/userSettingsStyle';
 export default function UserSettings() {
   const userContext = useContext(UserContext);
   if (!userContext) {
     throw new Error('UserSettings must be wrapped in a UserProvider');
   }
   const { user, refreshUser } = userContext;
+  
+  // Get values from AuthContext with proper destructuring
+  const auth = useContext(AuthContext);
+  console.log("Auth context value:", auth); // Add this debug line
+  
+  const { isAuthenticated, isTrainer = false } = auth || {};
+  console.log("Is trainer value:", isTrainer); // Add this debug line
+  
   const router = useRouter();
 
   const [name, setName] = useState('');
@@ -30,6 +39,8 @@ export default function UserSettings() {
   const [accountStatus, setAccountStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasTrainerProfile, setHasTrainerProfile] = useState(false);
+  const [checkingTrainerStatus, setCheckingTrainerStatus] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +49,30 @@ export default function UserSettings() {
       setAvailability(user.availability || '');
       setAccountStatus(user.accountStatus || '');
     }
+  }, [user]);
+
+  useEffect(() => {
+    // Check if user has a trainer profile when component mounts
+    const checkTrainerProfile = async () => {
+      if (!user || !user._id) {
+        setHasTrainerProfile(false);
+        setCheckingTrainerStatus(false);
+        return;
+      }
+      
+      try {
+        const trainerData = await getTrainerByUserId(user._id);
+        console.log("Trainer profile found:", trainerData);
+        setHasTrainerProfile(true);
+      } catch (error) {
+        console.log("Error checking trainer profile:", error.message);
+        setHasTrainerProfile(false);
+      } finally {
+        setCheckingTrainerStatus(false);
+      }
+    };
+    
+    checkTrainerProfile();
   }, [user]);
 
   const handleUpdate = async () => {
@@ -156,6 +191,27 @@ export default function UserSettings() {
                   </Text>
                 </TouchableOpacity>
                 
+                {/* Use isTrainer from AuthContext instead of user.isTrainer */}
+                {!checkingTrainerStatus && (
+                  <TouchableOpacity 
+                    style={[styles.trainerButton, hasTrainerProfile ? 
+                      {backgroundColor: '#4CAF50'} : // Green for edit
+                      {backgroundColor: '#FF9800'}   // Orange for create
+                    ]}
+                    onPress={() => router.push(hasTrainerProfile ? '/trainer/me/edit' : '/trainer/new/edit')}
+                  >
+                    <Ionicons 
+                      name={hasTrainerProfile ? "fitness-outline" : "create-outline"} 
+                      size={20} 
+                      color="white" 
+                      style={styles.buttonIcon} 
+                    />
+                    <Text style={styles.buttonText}>
+                      {hasTrainerProfile ? "Edit Trainer Profile" : "Create Trainer Profile"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                
                 <TouchableOpacity 
                   style={styles.deleteButton} 
                   onPress={handleDelete}
@@ -172,103 +228,15 @@ export default function UserSettings() {
           </KeyboardAvoidingView>
         </ScrollView>
       </View>
+      
+      {/* Add this debugging view */}
+      <View style={styles.debugContainer}>
+        <Text style={styles.debugText}>Auth context available: {auth ? 'Yes' : 'No'}</Text>
+        <Text style={styles.debugText}>Is trainer: {isTrainer ? 'Yes' : 'No'}</Text>
+        <Text style={styles.debugText}>Trainer status: {checkingTrainerStatus ? 'Checking...' : hasTrainerProfile ? 'Yes' : 'No'}</Text>
+      </View>
     </ImageBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  // Background & Container Styles
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  
-  // Typography Styles
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 24,
-    marginTop: 20,
-    textAlign: 'center',
-    letterSpacing: 1,
-  },
-  loadingText: {
-    fontSize: 18,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#DDDDDD',
-  },
-  
-  // Form Elements
-  form: {
-    width: '100%',
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  input: {
-    height: 50,
-    backgroundColor: 'rgba(34, 34, 34, 0.9)',
-    borderWidth: 1,
-    borderColor: '#333333',
-    borderRadius: 5,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: 'white',
-  },
-  error: {
-    color: '#ff6b6b',
-    marginBottom: 15,
-    textAlign: 'center',
-    fontSize: 16,
-  },
-  
-  // Button Styles
-  updateButton: {
-    backgroundColor: 'rgba(33, 150, 243, 0.9)',  // Material Blue
-    paddingVertical: 14,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(33, 150, 243, 0.5)',
-  },
-  deleteButton: {
-    backgroundColor: 'rgba(244, 67, 54, 0.9)',  // Material Red
-    paddingVertical: 14,
-    borderRadius: 5,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(244, 67, 54, 0.5)',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
-  }
-});
+

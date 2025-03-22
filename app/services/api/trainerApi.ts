@@ -75,12 +75,11 @@ export const getTrainerByUserId = async (userId: string) => {
     try {
         const response = await apiClient.get(`/trainers/user/${userId}`);
         return response.data;
-    } catch (error) {
-        // Don't treat 404 as an error when checking for trainer profiles
-        if ((error as any).response && (error as any).response.status === 404) {
-            return null; // User doesn't have a trainer profile yet
+    } catch (error: any) {
+        if (error.response && error.response.status === 404) {
+            // This is where your backend sends a 404 when trainer not found
+            throw new Error('Trainer profile not found');
         }
-        console.error('Error fetching trainer by user ID:', error);
         throw error;
     }
 };
@@ -109,7 +108,23 @@ export const updateTrainer = async (id: string, updateTrainerDto: any) => {
         throw error;
     }
 };
-
+// Add a new function that handles both create and update scenarios
+export const createOrUpdateTrainerProfile = async (userId: string, trainerData: any) => {
+    try {
+        // First, try to get existing trainer profile
+        try {
+            const existingProfile = await getTrainerByUserId(userId);
+            // If we get here, profile exists - update it
+            return await updateTrainer(existingProfile._id, trainerData);
+        } catch (error) {
+            // No profile exists - create a new one
+            return await becomeTrainer(userId, trainerData);
+        }
+    } catch (error) {
+        console.error('Error creating/updating trainer profile:', error);
+        throw error;
+    }
+};
 export const deleteTrainer = async (id: string) => {
     try {
         const response = await apiClient.delete(`/trainers/${id}`);

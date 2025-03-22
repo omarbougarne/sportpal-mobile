@@ -47,6 +47,7 @@ export default function TrainerProfileUI({
           Share your fitness expertise with others by becoming a trainer.
           You'll be able to create workouts, get reviews, and build your client base.
         </Text>
+        
         <TouchableOpacity 
           style={styles.becomeTrainerButton}
           onPress={onBecomeTrainer}

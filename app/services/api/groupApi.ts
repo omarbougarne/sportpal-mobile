@@ -167,12 +167,17 @@ export const removeMemberFromGroup = async (groupId: string, memberId: string) =
 
 
 
+// In your groupApi.ts file
 export const listGroupMembers = async (groupId: string) => {
     try {
         const response = await apiClient.get(`/groups/${groupId}/members`);
+
+        // Log the full response to see what's coming back
+        console.log(`API response for group ${groupId} members:`, response.data);
+
         return response.data;
     } catch (error) {
-        console.error('Error listing group members:', error);
+        console.error('API error in listGroupMembers:', error);
         throw error;
     }
 };

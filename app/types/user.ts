@@ -6,6 +6,7 @@ export interface User {
     level: string,
     availability: string,
     accountStatus: string,
+    isTrainer: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

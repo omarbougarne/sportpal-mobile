@@ -161,7 +161,6 @@ export default function CreateWorkoutContainer({ onSuccess }: CreateWorkoutConta
       onSubmit={handleSubmit}
       isEditMode={false}
       onCancel={handleCancel}
-      
     />
   );
 }

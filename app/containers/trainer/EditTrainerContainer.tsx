@@ -1,21 +1,27 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AuthContext } from '@/app/context/AuthContext';
-import { becomeTrainer, getTrainerById, updateTrainer } from '@/app/services/api/trainerApi';
+import { UserContext } from '@/app/context/UserContext'; 
+import { becomeTrainer, getTrainerById, updateTrainer, getTrainerByUserId } from '@/app/services/api/trainerApi';
 import EditTrainerUI from '@/app/components/trainer/EditTrainerUI';
 import { SpecializationType, CertificationType, Certification } from '@/app/types/trainer';
 
 interface TrainerEditContainerProps {
-  id: string;
+  id?: string;
   isNew?: boolean;
+  isSelfEdit?: boolean;
 }
 
-export default function EditTrainerContainer({ id, isNew = false }: TrainerEditContainerProps) {
+export default function EditTrainerContainer({ 
+  id = '', 
+  isNew = false, 
+  isSelfEdit = false 
+}: TrainerEditContainerProps) {
   const router = useRouter();
-  const { user, refreshUserData } = useContext(AuthContext);
+  const { user, refreshUserData } = useContext(UserContext);
   
-  // State declarations
+  // State declarations - keep your existing state variables here
+  const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [yearsOfExperience, setYearsOfExperience] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
@@ -33,17 +39,62 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [trainerProfileId, setTrainerProfileId] = useState<string | null>(null);
   
   useEffect(() => {
     if (isNew) {
       // For new trainers, just set authorized to true and don't load any data
       setIsAuthorized(true);
-    } else {
-      // For existing trainers, load their data
+    } else if (isSelfEdit) {
+      // For self-editing, load the current user's trainer profile
+      loadCurrentUserTrainerProfile();
+    } else if (id) {
+      // For existing trainers being edited by ID
       loadTrainerData();
     }
-  }, [id, isNew, user]);
+  }, [id, isNew, isSelfEdit, user]);
   
+  // New function to load current user's trainer profile
+  const loadCurrentUserTrainerProfile = async () => {
+    if (!user || !user._id) {
+      setError('You must be logged in to edit your trainer profile');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const trainerData = await getTrainerByUserId(user._id);
+      
+      if (!trainerData) {
+        setError('You do not have a trainer profile yet');
+        setIsAuthorized(false);
+        return;
+      }
+      
+      // Store the trainer profile ID for updates
+      setTrainerProfileId(trainerData._id);
+      setIsAuthorized(true);
+      
+      // Set form fields
+      setName(typeof trainerData.userId === 'object' ? trainerData.userId.name || '' : '');
+      setBio(trainerData.bio || '');
+      setYearsOfExperience(trainerData.yearsOfExperience?.toString() || '');
+      setHourlyRate(trainerData.hourlyRate?.toString() || '');
+      setSelectedSpecializations(trainerData.specializations || []);
+      setCertifications(trainerData.certifications || []);
+      
+    } catch (err: any) {
+      console.error('Error loading trainer data:', err);
+      setError(err.message || 'Failed to load your trainer profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Keep your existing loadTrainerData function here
   const loadTrainerData = async () => {
     if (!id) {
       setError('Invalid trainer ID');
@@ -100,6 +151,7 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
     return true;
   };
   
+  // Update your handleSubmit function to handle self-editing
   const handleSubmit = async () => {
     try {
       setError(null);
@@ -113,6 +165,7 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
       setSaving(true);
       
       const trainerData = {
+        name, // Include name in the data
         bio,
         yearsOfExperience: parseInt(yearsOfExperience),
         specializations: selectedSpecializations,
@@ -131,7 +184,10 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
         if (refreshUserData) {
           await refreshUserData();
         }
-      } else {
+      } else if (isSelfEdit && trainerProfileId) {
+        // For self-editing, use the loaded trainer profile ID
+        await updateTrainer(trainerProfileId, trainerData);
+      } else if (id) {
         // For existing trainers, update their profile
         await updateTrainer(id, trainerData);
       }
@@ -147,6 +203,14 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
       setError(err.message || 'Failed to update trainer profile. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    if (isOwnProfile) {
+      router.push('/trainer/edit'); 
+    } else if (isAdmin && trainer?._id) {
+      router.push(`/trainer/${trainer._id}/edit`);
     }
   };
 
@@ -200,6 +264,7 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
 
   return (
     <EditTrainerUI
+      name={name}
       bio={bio}
       yearsOfExperience={yearsOfExperience}
       hourlyRate={hourlyRate}
@@ -215,6 +280,7 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
       saving={saving}
       error={error}
       isAuthorized={isAuthorized}
+      onNameChange={setName}
       onBioChange={setBio}
       onYearsOfExperienceChange={setYearsOfExperience}
       onHourlyRateChange={setHourlyRate}
@@ -229,7 +295,7 @@ export default function EditTrainerContainer({ id, isNew = false }: TrainerEditC
       onRemoveCertification={handleRemoveCertification}
       onSubmit={handleSubmit}
       onCancel={() => router.back()}
-      onRetry={isNew ? () => setError(null) : loadTrainerData}
+      onRetry={isNew ? () => setError(null) : isSelfEdit ? loadCurrentUserTrainerProfile : loadTrainerData}
     />
   );
 }
